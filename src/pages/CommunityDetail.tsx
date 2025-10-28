@@ -62,25 +62,52 @@ export default function CommunityDetail() {
       .from('plan_activities')
       .select(`
         *,
-        budget_items(*),
-        receipts(*),
         photos:activity_photos(*)
       `)
       .eq('community_id', communityId)
       .eq('fiscal_year_id', selectedFiscalYearId)
       .order('period_start', { ascending: false });
 
+    const activityIds = activitiesData?.map(a => a.id) || [];
+
+    const { data: allBudgetItems } = await supabase
+      .from('budget_items')
+      .select('*')
+      .in('plan_activity_id', activityIds);
+
+    const { data: allReceipts } = await supabase
+      .from('receipts')
+      .select('*')
+      .in('plan_activity_id', activityIds);
+
+    const budgetItemsByActivity = new Map<string, any[]>();
+    const receiptsByBudgetItem = new Set<string>();
+
+    allBudgetItems?.forEach(bi => {
+      if (!budgetItemsByActivity.has(bi.plan_activity_id)) {
+        budgetItemsByActivity.set(bi.plan_activity_id, []);
+      }
+      budgetItemsByActivity.get(bi.plan_activity_id)?.push(bi);
+    });
+
+    allReceipts?.forEach(r => {
+      if (r.budget_item_id) {
+        receiptsByBudgetItem.add(r.budget_item_id);
+      }
+    });
+
     if (communityData && activitiesData) {
       let totalBudget = 0;
       let totalSpent = 0;
 
       const enrichedActivities = activitiesData.map(activity => {
-        const receiptBudgetItemIds = new Set(
-          activity.receipts?.map((r: any) => r.budget_item_id).filter(Boolean) || []
-        );
-        const spentItems = activity.budget_items?.filter((bi: any) => receiptBudgetItemIds.has(bi.id)) || [];
+        const activityBudgetItems = budgetItemsByActivity.get(activity.id) || [];
+        const spentItems = activityBudgetItems.filter((bi: any) => receiptsByBudgetItem.has(bi.id));
         const spent = spentItems.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
         const expenditureRate = activity.total_budget > 0 ? (spent / activity.total_budget) * 100 : 0;
+
+        activity.budget_items = activityBudgetItems;
+        activity.receipts = allReceipts?.filter(r => r.plan_activity_id === activity.id) || [];
 
         totalBudget += activity.total_budget || 0;
         totalSpent += spent;

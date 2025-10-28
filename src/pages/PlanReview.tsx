@@ -63,9 +63,7 @@ export default function PlanReview() {
       .from('plan_activities')
       .select(`
         *,
-        community:communities(id, name, commune:communes(id, name)),
-        budget_items(*),
-        receipts(*)
+        community:communities(id, name, commune:communes(id, name))
       `)
       .eq('fiscal_year_id', selectedFiscalYearId);
 
@@ -82,6 +80,34 @@ export default function PlanReview() {
     }
 
     const { data: activities } = await activitiesQuery;
+
+    const activityIds = activities?.map(a => a.id) || [];
+
+    const { data: allBudgetItems } = await supabase
+      .from('budget_items')
+      .select('*')
+      .in('plan_activity_id', activityIds);
+
+    const { data: allReceipts } = await supabase
+      .from('receipts')
+      .select('*')
+      .in('plan_activity_id', activityIds);
+
+    const budgetItemsByActivity = new Map<string, any[]>();
+    const receiptsByBudgetItem = new Set<string>();
+
+    allBudgetItems?.forEach(bi => {
+      if (!budgetItemsByActivity.has(bi.plan_activity_id)) {
+        budgetItemsByActivity.set(bi.plan_activity_id, []);
+      }
+      budgetItemsByActivity.get(bi.plan_activity_id)?.push(bi);
+    });
+
+    allReceipts?.forEach(r => {
+      if (r.budget_item_id) {
+        receiptsByBudgetItem.add(r.budget_item_id);
+      }
+    });
 
     const { data: meetings } = await supabase
       .from('meeting_records')
@@ -123,10 +149,8 @@ export default function PlanReview() {
         communityMap[communityId].totalBudget += activity.total_budget || 0;
         communityMap[communityId].activitiesCount += 1;
 
-        const receiptBudgetItemIds = new Set(
-          activity.receipts?.map((r: any) => r.budget_item_id).filter(Boolean) || []
-        );
-        const spentItems = activity.budget_items?.filter((bi: any) => receiptBudgetItemIds.has(bi.id)) || [];
+        const activityBudgetItems = budgetItemsByActivity.get(activity.id) || [];
+        const spentItems = activityBudgetItems.filter((bi: any) => receiptsByBudgetItem.has(bi.id));
         const spent = spentItems.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
         communityMap[communityId].totalSpent += spent;
 

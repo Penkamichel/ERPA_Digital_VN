@@ -65,9 +65,7 @@ export default function Dashboard() {
       .from('plan_activities')
       .select(`
         *,
-        community:communities(*, commune:communes(*)),
-        receipts(*),
-        budget_items(*)
+        community:communities(*, commune:communes(*))
       `)
       .eq('fiscal_year_id', selectedFiscalYearId);
 
@@ -84,6 +82,34 @@ export default function Dashboard() {
     }
 
     const { data: activities } = await activitiesQuery;
+
+    const activityIds = activities?.map(a => a.id) || [];
+
+    const { data: allBudgetItems } = await supabase
+      .from('budget_items')
+      .select('*')
+      .in('plan_activity_id', activityIds);
+
+    const { data: allReceipts } = await supabase
+      .from('receipts')
+      .select('*')
+      .in('plan_activity_id', activityIds);
+
+    const budgetItemsByActivity = new Map<string, any[]>();
+    const receiptsByBudgetItem = new Set<string>();
+
+    allBudgetItems?.forEach(bi => {
+      if (!budgetItemsByActivity.has(bi.plan_activity_id)) {
+        budgetItemsByActivity.set(bi.plan_activity_id, []);
+      }
+      budgetItemsByActivity.get(bi.plan_activity_id)?.push(bi);
+    });
+
+    allReceipts?.forEach(r => {
+      if (r.budget_item_id) {
+        receiptsByBudgetItem.add(r.budget_item_id);
+      }
+    });
 
     if (activities) {
       let income: IncomeBreakdown = {
@@ -112,12 +138,10 @@ export default function Dashboard() {
 
         totalBudget += activity.total_budget || 0;
 
-        const receiptBudgetItemIds = new Set(
-          activity.receipts?.map((r: any) => r.budget_item_id).filter(Boolean) || []
-        );
+        const activityBudgetItems = budgetItemsByActivity.get(activity.id) || [];
 
-        activity.budget_items?.forEach((budgetItem: any) => {
-          if (receiptBudgetItemIds.has(budgetItem.id)) {
+        activityBudgetItems.forEach((budgetItem: any) => {
+          if (receiptsByBudgetItem.has(budgetItem.id)) {
             let family = budgetItem.expenditure_family || activity.expenditure_family;
             if (!family) {
               family = autoCategorizeFamily(budgetItem.item_name || '', activity.activity_name);
@@ -143,7 +167,8 @@ export default function Dashboard() {
           }
         });
 
-        const spentItems = activity.budget_items?.filter((bi: any) => receiptBudgetItemIds.has(bi.id)) || [];
+        const activityBudgetItems2 = budgetItemsByActivity.get(activity.id) || [];
+        const spentItems = activityBudgetItems2.filter((bi: any) => receiptsByBudgetItem.has(bi.id));
         const spent = spentItems.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
 
         const communeName = activity.community?.commune?.name || 'Unknown';
@@ -267,12 +292,10 @@ export default function Dashboard() {
       const details: BudgetItemDetail[] = [];
 
       activities.forEach(activity => {
-        const receiptBudgetItemIds = new Set(
-          activity.receipts?.map((r: any) => r.budget_item_id).filter(Boolean) || []
-        );
+        const activityBudgetItems = budgetItemsByActivity.get(activity.id) || [];
 
-        activity.budget_items?.forEach((budgetItem: any) => {
-          if (receiptBudgetItemIds.has(budgetItem.id)) {
+        activityBudgetItems.forEach((budgetItem: any) => {
+          if (receiptsByBudgetItem.has(budgetItem.id)) {
             let itemFamily = budgetItem.expenditure_family || activity.expenditure_family;
             if (!itemFamily) {
               itemFamily = autoCategorizeFamily(budgetItem.item_name || '', activity.activity_name);
@@ -331,12 +354,10 @@ export default function Dashboard() {
       const details: BudgetItemDetail[] = [];
 
       activities.forEach(activity => {
-        const receiptBudgetItemIds = new Set(
-          activity.receipts?.map((r: any) => r.budget_item_id).filter(Boolean) || []
-        );
+        const activityBudgetItems = budgetItemsByActivity.get(activity.id) || [];
 
-        activity.budget_items?.forEach((budgetItem: any) => {
-          if (receiptBudgetItemIds.has(budgetItem.id)) {
+        activityBudgetItems.forEach((budgetItem: any) => {
+          if (receiptsByBudgetItem.has(budgetItem.id)) {
             let itemFamily = budgetItem.expenditure_family || activity.expenditure_family;
             let itemProgram = budgetItem.program_category;
 
