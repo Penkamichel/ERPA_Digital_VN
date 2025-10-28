@@ -150,8 +150,8 @@ Provincial Fund teams need **speed** (find issues quickly), **clarity** (see mon
 This demo uses simple screens and plain language to **show the idea** before building a full system.
 
 For a deeper explanation, see:
-- [`/docs/DESIGN_RATIONALE.md`](docs/DESIGN_RATIONALE.md)
-- [`/docs/DATA_MODEL.md`](docs/DATA_MODEL.md)
+- [`docs/DESIGN_RATIONALE.md`](docs/DESIGN_RATIONALE.md)
+- [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md)
 
 ---
 
