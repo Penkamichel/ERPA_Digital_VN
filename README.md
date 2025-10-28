@@ -14,7 +14,6 @@ It helps you **see** how PF daily work can be supported by an easy dashboard, cl
 This demo shows how a Provincial Fund (PF) officer can easily see progress, find problems, and act —  
 all from one simple dashboard. Each page is designed for a specific **real-world PF task**.
 
----
 
 ### 1) Dashboard — *See the big picture in 10 seconds*
 
