@@ -122,7 +122,6 @@ export default function PlanReview() {
 
     if (activities) {
       const communityMap: { [key: string]: CommunitySummary } = {};
-      const statusCounts = { draft: 0, submitted: 0, approved: 0, ongoing: 0, completed: 0 };
       let totalApproved = 0;
       let totalSpent = 0;
 
@@ -160,13 +159,16 @@ export default function PlanReview() {
           communityMap[communityId].status = activity.status;
         }
 
-        statusCounts[activity.status as keyof typeof statusCounts] =
-          (statusCounts[activity.status as keyof typeof statusCounts] || 0) + 1;
-
         if (['approved', 'ongoing', 'completed'].includes(activity.status)) {
           totalApproved += activity.total_budget || 0;
           totalSpent += spent;
         }
+      });
+
+      const statusCounts = { draft: 0, submitted: 0, approved: 0, ongoing: 0, completed: 0 };
+      Object.values(communityMap).forEach(community => {
+        statusCounts[community.status as keyof typeof statusCounts] =
+          (statusCounts[community.status as keyof typeof statusCounts] || 0) + 1;
       });
 
       if (disbursements) {
@@ -286,7 +288,7 @@ export default function PlanReview() {
         <Card>
           <CardBody>
             <div>
-              <p className="text-sm text-gray-600 mb-3">Activities by Status</p>
+              <p className="text-sm text-gray-600 mb-3">Communities by Status</p>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Completed:</span>
@@ -308,7 +310,7 @@ export default function PlanReview() {
         <Card>
           <CardBody>
             <div>
-              <p className="text-sm text-gray-600 mb-3">Pending Actions</p>
+              <p className="text-sm text-gray-600 mb-3">Communities Pending</p>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Submitted:</span>
