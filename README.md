@@ -150,8 +150,8 @@ Provincial Fund teams need **speed** (find issues quickly), **clarity** (see mon
 This demo uses simple screens and plain language to **show the idea** before building a full system.
 
 For a deeper explanation, see:
-- [`docs/DESIGN_RATIONALE.md`](docs/DESIGN_RATIONALE.md)
-- [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md)
+- [`doc/DESIGN_RATIONALE.md`](doc/DESIGN_RATIONALE.md)
+- [`doc/DATA_MODEL.md`](doc/DATA_MODEL.md)
 
 ---
 
@@ -167,7 +167,7 @@ We produced this prototype **by talking to AI**.
 Even non-coders can iterate a working demo by sharing goals and examples.
 
 See the step-by-step prompt script:  
-[`/docs/AI_PROMPT_PLAYBOOK.md`](docs/AI_PROMPT_PLAYBOOK.md)
+[`doc/AI_PROMPT_PLAYBOOK.md`](doc/AI_PROMPT_PLAYBOOK.md)
 
 ---
 
