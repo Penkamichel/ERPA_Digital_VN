@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LogIn } from 'lucide-react';
+import { LogIn, Smartphone } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -88,6 +88,16 @@ export default function Login() {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
+
+          <div className="mt-6">
+            <Link
+              to="/mobile-app"
+              className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              <Smartphone className="w-5 h-5" />
+              View Mobile App Demo
+            </Link>
+          </div>
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <p className="text-sm text-gray-600 mb-3">Demo Accounts:</p>

@@ -13,6 +13,7 @@ import Publications from './pages/Publications';
 import Accounts from './pages/Accounts';
 import AccountDetail from './pages/AccountDetail';
 import Settings from './pages/Settings';
+import MobileAppDemo from './pages/MobileAppDemo';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -40,6 +41,10 @@ function AppRoutes() {
       <Route
         path="/login"
         element={user ? <Navigate to="/" replace /> : <Login />}
+      />
+      <Route
+        path="/mobile-app"
+        element={<MobileAppDemo />}
       />
       <Route
         path="/"
