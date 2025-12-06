@@ -65,12 +65,24 @@ export function useFiscalYearData(communityName: string, selectedYear: number) {
       let totalSpent = 0;
 
       if (activityIds.length > 0) {
-        const { data: expenditures } = await supabase
-          .from('expenditures')
-          .select('amount')
-          .in('plan_activity_id', activityIds);
+        const { data: receipts } = await supabase
+          .from('receipts')
+          .select('budget_item_id')
+          .in('plan_activity_id', activityIds)
+          .eq('verified', true);
 
-        totalSpent = expenditures?.reduce((sum, exp) => sum + Number(exp.amount || 0), 0) || 0;
+        if (receipts && receipts.length > 0) {
+          const budgetItemIds = receipts.map(r => r.budget_item_id).filter(Boolean);
+
+          if (budgetItemIds.length > 0) {
+            const { data: budgetItems } = await supabase
+              .from('budget_items')
+              .select('amount')
+              .in('id', budgetItemIds);
+
+            totalSpent = budgetItems?.reduce((sum, item) => sum + Number(item.amount || 0), 0) || 0;
+          }
+        }
       }
 
       setData({

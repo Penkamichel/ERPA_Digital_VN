@@ -5,3 +5,4 @@ export * from './MobileHome';
 export * from './MobilePlan';
 export * from './MobileActivity';
 export * from './MobileSettings';
+export * from './ActivityDetail';

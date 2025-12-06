@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DemoUser, ActivitySubTab, FiscalYearData } from './types';
+import { ActivityDetail } from './ActivityDetail';
+import { supabase } from '../../lib/supabase';
 
 interface MobileActivityProps {
   user: DemoUser;
@@ -9,8 +11,64 @@ interface MobileActivityProps {
   initialSubTab?: string;
 }
 
+interface Activity {
+  id: string;
+  activity_name: string;
+  total_budget: number;
+  status: string;
+  period_start: string;
+  period_end: string;
+}
+
 export function MobileActivity({ user, selectedYear, setSelectedYear, fiscalYearData, initialSubTab }: MobileActivityProps) {
   const [subTab, setSubTab] = useState<ActivitySubTab>(initialSubTab as ActivitySubTab || 'activities');
+  const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadActivities();
+  }, [selectedYear]);
+
+  const loadActivities = async () => {
+    setLoading(true);
+    try {
+      const { data: community } = await supabase
+        .from('communities')
+        .select('id')
+        .eq('name', 'Ban Pho Village')
+        .maybeSingle();
+
+      if (!community) {
+        setLoading(false);
+        return;
+      }
+
+      const { data: fy } = await supabase
+        .from('fiscal_years')
+        .select('id')
+        .eq('year', selectedYear)
+        .maybeSingle();
+
+      if (!fy) {
+        setLoading(false);
+        return;
+      }
+
+      const { data: activitiesData } = await supabase
+        .from('plan_activities')
+        .select('id, activity_name, total_budget, status, period_start, period_end')
+        .eq('community_id', community.id)
+        .eq('fiscal_year_id', fy.id)
+        .order('created_at', { ascending: false });
+
+      setActivities(activitiesData || []);
+    } catch (error) {
+      console.error('Error loading activities:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatAmount = (amount: number) => {
     if (amount >= 1000000) {
@@ -22,6 +80,15 @@ export function MobileActivity({ user, selectedYear, setSelectedYear, fiscalYear
   const usagePercent = fiscalYearData
     ? Math.round((fiscalYearData.totalSpent / fiscalYearData.totalBudget) * 100)
     : 0;
+
+  if (selectedActivityId) {
+    return (
+      <ActivityDetail
+        activityId={selectedActivityId}
+        onBack={() => setSelectedActivityId(null)}
+      />
+    );
+  }
 
   return (
     <div>
@@ -75,38 +142,76 @@ export function MobileActivity({ user, selectedYear, setSelectedYear, fiscalYear
       </div>
 
       <div className="p-4 space-y-3">
-        {subTab === 'activities' && <ActivitiesTab selectedYear={selectedYear} />}
+        {subTab === 'activities' && (
+          <ActivitiesTab
+            activities={activities}
+            loading={loading}
+            onActivityClick={setSelectedActivityId}
+          />
+        )}
         {subTab === 'reporting' && <ReportingTab user={user} selectedYear={selectedYear} />}
       </div>
     </div>
   );
 }
 
-function ActivitiesTab({ selectedYear }: { selectedYear: number }) {
-  if (selectedYear === 2025) {
+function ActivitiesTab({ activities, loading, onActivityClick }: {
+  activities: Activity[];
+  loading: boolean;
+  onActivityClick: (id: string) => void;
+}) {
+  const formatAmount = (amount: number) => {
+    if (amount >= 1000000) {
+      return `${(amount / 1000000).toFixed(1)}M`;
+    }
+    return `${(amount / 1000).toFixed(0)}K`;
+  };
+
+  const getProgress = (status: string) => {
+    const progressMap: Record<string, number> = {
+      draft: 0,
+      submitted: 20,
+      approved: 40,
+      ongoing: 70,
+      completed: 100,
+      cancelled: 0,
+    };
+    return progressMap[status] || 0;
+  };
+
+  if (loading) {
     return (
-      <>
-        <ActivityCard title="森林パトロール・保護活動" budget="24M VND" progress={50} status="ongoing" />
-        <ActivityCard title="非木材林産物の採取" budget="16M VND" progress={30} status="ongoing" />
-        <ActivityCard title="コミュニティ研修" budget="10M VND" progress={100} status="completed" />
-      </>
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+          </div>
+        ))}
+      </div>
     );
   }
 
-  if (selectedYear === 2024) {
+  if (activities.length === 0) {
     return (
-      <>
-        <ActivityCard title="持続可能な森林管理訓練" budget="15M VND" progress={100} status="completed" />
-        <ActivityCard title="エコツーリズム開発" budget="12M VND" progress={100} status="completed" />
-        <ActivityCard title="炭焼き技術改善" budget="10M VND" progress={100} status="completed" />
-      </>
+      <div className="bg-gray-100 rounded-xl p-8 text-center">
+        <p className="text-sm text-gray-600">この年度の活動はありません</p>
+      </div>
     );
   }
 
   return (
     <>
-      <ActivityCard title="森林保護活動" budget="18M VND" progress={100} status="completed" />
-      <ActivityCard title="NTFP採取訓練" budget="15M VND" progress={100} status="completed" />
+      {activities.map((activity) => (
+        <ActivityCard
+          key={activity.id}
+          title={activity.activity_name}
+          budget={formatAmount(activity.total_budget)}
+          progress={getProgress(activity.status)}
+          status={activity.status}
+          onClick={() => onActivityClick(activity.id)}
+        />
+      ))}
     </>
   );
 }
@@ -170,42 +275,48 @@ function ReportingTab({ user, selectedYear }: { user: DemoUser; selectedYear: nu
   );
 }
 
-function ActivityCard({ title, budget, progress, status }: {
+function ActivityCard({ title, budget, progress, status, onClick }: {
   title: string;
   budget: string;
   progress: number;
-  status: 'ongoing' | 'completed';
+  status: string;
+  onClick: () => void;
 }) {
+  const isCompleted = status === 'completed';
+
   return (
-    <button className="w-full bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-left hover:shadow-md transition-all">
+    <button
+      onClick={onClick}
+      className="w-full bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-left hover:shadow-md transition-all"
+    >
       <div className="flex items-start justify-between mb-2">
         <h3 className="font-semibold text-gray-900 text-sm flex-1">{title}</h3>
-        {status === 'completed' && (
+        {isCompleted && (
           <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded-lg font-semibold whitespace-nowrap ml-2">
             完了
           </span>
         )}
       </div>
-      <p className="text-xs text-gray-600 mb-3">予算: {budget}</p>
+      <p className="text-xs text-gray-600 mb-3">予算: {budget} VND</p>
 
       <div className="mb-2">
         <div className="flex items-center justify-between text-xs mb-1">
           <span className="text-gray-600">進捗度</span>
-          <span className={`font-semibold ${status === 'completed' ? 'text-emerald-600' : 'text-blue-600'}`}>
+          <span className={`font-semibold ${isCompleted ? 'text-emerald-600' : 'text-blue-600'}`}>
             {progress}%
           </span>
         </div>
         <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all ${status === 'completed' ? 'bg-emerald-600' : 'bg-blue-600'}`}
+            className={`h-full rounded-full transition-all ${isCompleted ? 'bg-emerald-600' : 'bg-blue-600'}`}
             style={{ width: `${progress}%` }}
           ></div>
         </div>
       </div>
 
       <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-        <span className="text-xs text-gray-500">詳細を見る</span>
-        <span className="text-gray-400">→</span>
+        <span className="text-xs text-blue-600 font-medium">詳細を見る</span>
+        <span className="text-blue-600">→</span>
       </div>
     </button>
   );
