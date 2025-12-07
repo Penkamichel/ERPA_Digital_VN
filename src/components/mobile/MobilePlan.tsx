@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { DemoUser, PlanSubTab } from './types';
 import { FundRegistrationForm } from './forms/FundRegistrationForm';
 import { IdeaRegistrationForm } from './forms/IdeaRegistrationForm';
 import { MeetingMinutesForm } from './forms/MeetingMinutesForm';
 import { PlanBudgetForm } from './forms/PlanBudgetForm';
+import { supabase } from '../../lib/supabase';
 
 interface MobilePlanProps {
   user: DemoUser;
@@ -113,7 +114,7 @@ export function MobilePlan({ user, selectedYear, setSelectedYear, initialSubTab,
       </div>
 
       <div className="p-4 space-y-3">
-        {subTab === 'fund' && <FundRegistrationTab user={user} selectedYear={selectedYear} onOpenForm={() => setShowFundForm(true)} />}
+        {subTab === 'fund' && <FundRegistrationTab user={user} selectedYear={selectedYear} communityId={communityId} fiscalYearId={fiscalYearId} onOpenForm={() => setShowFundForm(true)} />}
         {subTab === 'ideas' && <IdeasTab user={user} selectedYear={selectedYear} setSelectedYear={setSelectedYear} onOpenForm={() => setShowIdeaForm(true)} />}
         {subTab === 'meetings' && <MeetingsTab user={user} onOpenForm={() => setShowMeetingForm(true)} />}
         {subTab === 'plan' && <PlanInputTab user={user} onOpenForm={() => setShowPlanForm(true)} />}
@@ -122,7 +123,63 @@ export function MobilePlan({ user, selectedYear, setSelectedYear, initialSubTab,
   );
 }
 
-function FundRegistrationTab({ user, selectedYear, onOpenForm }: { user: DemoUser; selectedYear: number; onOpenForm: () => void }) {
+function FundRegistrationTab({ user, selectedYear, communityId, fiscalYearId, onOpenForm }: {
+  user: DemoUser;
+  selectedYear: number;
+  communityId: string;
+  fiscalYearId: string;
+  onOpenForm: () => void
+}) {
+  const [fundRegistrations, setFundRegistrations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadFundRegistrations();
+  }, [communityId, selectedYear]);
+
+  const loadFundRegistrations = async () => {
+    setLoading(true);
+    try {
+      const { data: fy } = await supabase
+        .from('fiscal_years')
+        .select('id')
+        .eq('year', selectedYear)
+        .maybeSingle();
+
+      if (!fy) {
+        setFundRegistrations([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('fund_registrations')
+        .select('*')
+        .eq('community_id', communityId)
+        .eq('fiscal_year_id', fy.id)
+        .order('payment_date', { ascending: false });
+
+      if (error) throw error;
+      setFundRegistrations(data || []);
+    } catch (error) {
+      console.error('Error loading fund registrations:', error);
+      setFundRegistrations([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatAmount = (amount: number) => {
+    if (amount >= 1000000) {
+      return `${(amount / 1000000).toFixed(1)}M VND`;
+    }
+    return `${(amount / 1000).toFixed(0)}K VND`;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+  };
+
   return (
     <>
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
@@ -141,34 +198,52 @@ function FundRegistrationTab({ user, selectedYear, onOpenForm }: { user: DemoUse
         </button>
       )}
 
-      <div className="bg-white rounded-xl p-4 border border-gray-200">
-        <div className="flex justify-between items-start mb-3">
-          <div>
-            <p className="text-sm font-semibold text-gray-900">FY{selectedYear} Fund登録</p>
-            <p className="text-xs text-gray-600 mt-1">Ban Pho Village</p>
-          </div>
-          <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded-lg font-semibold">承認済み</span>
+      {loading ? (
+        <div className="bg-white rounded-xl p-4 border border-gray-200 animate-pulse">
+          <div className="h-20 bg-gray-200 rounded"></div>
         </div>
+      ) : fundRegistrations.length === 0 ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+          <p className="text-sm text-amber-900">まだFund登録がありません</p>
+        </div>
+      ) : (
+        fundRegistrations.map((fund) => (
+          <div key={fund.id} className="bg-white rounded-xl p-4 border border-gray-200">
+            <div className="flex justify-between items-start mb-3">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">FY{selectedYear} Fund登録</p>
+                <p className="text-xs text-gray-600 mt-1">{user.communityName}</p>
+              </div>
+              <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded-lg font-semibold">
+                {fund.status === 'registered' ? '承認済み' : fund.status}
+              </span>
+            </div>
 
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between py-2 border-b border-gray-100">
-            <span className="text-gray-600">承認金額</span>
-            <span className="font-semibold text-gray-900">
-              {selectedYear === 2025 ? '50M VND' : selectedYear === 2024 ? '37M VND' : '33M VND'}
-            </span>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between py-2 border-b border-gray-100">
+                <span className="text-gray-600">承認金額</span>
+                <span className="font-semibold text-gray-900">{formatAmount(fund.amount_received_vnd)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100">
+                <span className="text-gray-600">資金源</span>
+                <span className="text-gray-900 text-xs">{fund.fund_source}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100">
+                <span className="text-gray-600">支払日</span>
+                <span className="text-gray-900">{formatDate(fund.payment_date)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100">
+                <span className="text-gray-600">支払者</span>
+                <span className="text-gray-900 text-xs">{fund.payer_name}</span>
+              </div>
+              <div className="flex justify-between py-2">
+                <span className="text-gray-600">登録者</span>
+                <span className="text-gray-900">{fund.recorded_by}</span>
+              </div>
+            </div>
           </div>
-          <div className="flex justify-between py-2 border-b border-gray-100">
-            <span className="text-gray-600">承認日</span>
-            <span className="text-gray-900">
-              {selectedYear === 2025 ? '2025年1月10日' : selectedYear === 2024 ? '2024年1月20日' : '2023年1月15日'}
-            </span>
-          </div>
-          <div className="flex justify-between py-2">
-            <span className="text-gray-600">登録者</span>
-            <span className="text-gray-900">Siriporn</span>
-          </div>
-        </div>
-      </div>
+        ))
+      )}
     </>
   );
 }
