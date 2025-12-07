@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { DemoUser, ActivitySubTab, FiscalYearData } from './types';
 import { ActivityDetail } from './ActivityDetail';
-import { ReceiptActivityLogForm } from './forms/ReceiptActivityLogForm';
+import { ActivityLogForm } from './forms/ActivityLogForm';
+import { ReceiptForm } from './forms/ReceiptForm';
 import { supabase } from '../../lib/supabase';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface MobileActivityProps {
   user: DemoUser;
@@ -24,8 +26,10 @@ interface Activity {
 }
 
 export function MobileActivity({ user, selectedYear, setSelectedYear, fiscalYearData, initialSubTab, communityId, fiscalYearId }: MobileActivityProps) {
+  const { t } = useLanguage();
   const [subTab, setSubTab] = useState<ActivitySubTab>(initialSubTab as ActivitySubTab || 'activities');
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
+  const [showActivityLogForm, setShowActivityLogForm] = useState(false);
   const [showReceiptForm, setShowReceiptForm] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
@@ -85,9 +89,23 @@ export function MobileActivity({ user, selectedYear, setSelectedYear, fiscalYear
     ? Math.round((fiscalYearData.totalSpent / fiscalYearData.totalBudget) * 100)
     : 0;
 
+  if (showActivityLogForm) {
+    return (
+      <ActivityLogForm
+        communityId={communityId}
+        fiscalYearId={fiscalYearId}
+        onBack={() => setShowActivityLogForm(false)}
+        onSuccess={() => {
+          setShowActivityLogForm(false);
+          loadActivities();
+        }}
+      />
+    );
+  }
+
   if (showReceiptForm) {
     return (
-      <ReceiptActivityLogForm
+      <ReceiptForm
         communityId={communityId}
         fiscalYearId={fiscalYearId}
         onBack={() => setShowReceiptForm(false)}
@@ -112,15 +130,15 @@ export function MobileActivity({ user, selectedYear, setSelectedYear, fiscalYear
     <div>
       <div className="bg-white border-b border-gray-200 px-4 py-3">
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-xl font-bold text-gray-900">活動管理</h1>
+          <h1 className="text-xl font-bold text-gray-900">{t('activity')}</h1>
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(Number(e.target.value))}
             className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white"
           >
-            <option value={2025}>2025年</option>
-            <option value={2024}>2024年</option>
-            <option value={2023}>2023年</option>
+            <option value={2025}>2025{t('fiscal_year') !== 'fiscal_year' ? ` (${t('fiscal_year')})` : ''}</option>
+            <option value={2024}>2024</option>
+            <option value={2023}>2023</option>
           </select>
         </div>
       </div>
@@ -129,18 +147,18 @@ export function MobileActivity({ user, selectedYear, setSelectedYear, fiscalYear
         <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-4 text-white">
           <div className="flex justify-between items-center mb-2">
             <div>
-              <p className="text-xs opacity-90">全体予算</p>
+              <p className="text-xs opacity-90">{t('total_budget')}</p>
               <p className="text-2xl font-bold">{formatAmount(fiscalYearData.totalBudget)} VND</p>
             </div>
             <div className="text-right">
-              <p className="text-xs opacity-90">使用済み</p>
+              <p className="text-xs opacity-90">{t('used')}</p>
               <p className="text-2xl font-bold">{formatAmount(fiscalYearData.totalSpent)} VND</p>
             </div>
           </div>
           <div className="h-3 bg-white bg-opacity-30 rounded-full overflow-hidden">
             <div className="h-full bg-white rounded-full transition-all" style={{ width: `${usagePercent}%` }}></div>
           </div>
-          <p className="text-xs text-center mt-1 opacity-90">{usagePercent}% 使用済み</p>
+          <p className="text-xs text-center mt-1 opacity-90">{usagePercent}% {t('used')}</p>
         </div>
       )}
 
@@ -149,13 +167,13 @@ export function MobileActivity({ user, selectedYear, setSelectedYear, fiscalYear
           onClick={() => setSubTab('activities')}
           className={`flex-1 py-3 font-semibold border-b-2 ${subTab === 'activities' ? 'text-blue-600 border-blue-600' : 'text-gray-600 border-transparent'}`}
         >
-          活動一覧
+          {t('activity_list')}
         </button>
         <button
           onClick={() => setSubTab('reporting')}
           className={`flex-1 py-3 font-semibold border-b-2 ${subTab === 'reporting' ? 'text-blue-600 border-blue-600' : 'text-gray-600 border-transparent'}`}
         >
-          報告・記録
+          {t('reporting')}
         </button>
       </div>
 
@@ -167,7 +185,14 @@ export function MobileActivity({ user, selectedYear, setSelectedYear, fiscalYear
             onActivityClick={setSelectedActivityId}
           />
         )}
-        {subTab === 'reporting' && <ReportingTab user={user} selectedYear={selectedYear} onOpenForm={() => setShowReceiptForm(true)} />}
+        {subTab === 'reporting' && (
+          <ReportingTab
+            user={user}
+            selectedYear={selectedYear}
+            onOpenActivityLogForm={() => setShowActivityLogForm(true)}
+            onOpenReceiptForm={() => setShowReceiptForm(true)}
+          />
+        )}
       </div>
     </div>
   );
@@ -178,6 +203,7 @@ function ActivitiesTab({ activities, loading, onActivityClick }: {
   loading: boolean;
   onActivityClick: (id: string) => void;
 }) {
+  const { t } = useLanguage();
   const formatAmount = (amount: number) => {
     if (amount >= 1000000) {
       return `${(amount / 1000000).toFixed(1)}M`;
@@ -213,7 +239,7 @@ function ActivitiesTab({ activities, loading, onActivityClick }: {
   if (activities.length === 0) {
     return (
       <div className="bg-gray-100 rounded-xl p-8 text-center">
-        <p className="text-sm text-gray-600">この年度の活動はありません</p>
+        <p className="text-sm text-gray-600">{t('no_activities')}</p>
       </div>
     );
   }
@@ -234,13 +260,19 @@ function ActivitiesTab({ activities, loading, onActivityClick }: {
   );
 }
 
-function ReportingTab({ user, selectedYear, onOpenForm }: { user: DemoUser; selectedYear: number; onOpenForm: () => void }) {
+function ReportingTab({ user, selectedYear, onOpenActivityLogForm, onOpenReceiptForm }: {
+  user: DemoUser;
+  selectedYear: number;
+  onOpenActivityLogForm: () => void;
+  onOpenReceiptForm: () => void;
+}) {
+  const { t } = useLanguage();
   const isCompleted = selectedYear < 2025;
 
   if (user.role !== 'CMB') {
     return (
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-        <p className="text-sm text-amber-900">この機能はCMBメンバーのみ利用できます</p>
+        <p className="text-sm text-amber-900">{t('cmb_only')}</p>
       </div>
     );
   }
@@ -250,19 +282,19 @@ function ReportingTab({ user, selectedYear, onOpenForm }: { user: DemoUser; sele
       {!isCompleted && (
         <>
           <button
-            onClick={onOpenForm}
+            onClick={onOpenActivityLogForm}
             className="w-full bg-blue-600 text-white rounded-xl py-4 font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
           >
             <span className="text-xl">📝</span>
-            活動記録を入力
+            {t('submit_activity_log')}
           </button>
 
           <button
-            onClick={onOpenForm}
+            onClick={onOpenReceiptForm}
             className="w-full bg-emerald-600 text-white rounded-xl py-4 font-semibold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
           >
             <span className="text-xl">📸</span>
-            写真・レシートをアップロード
+            {t('upload_receipt')}
           </button>
         </>
       )}
@@ -306,6 +338,7 @@ function ActivityCard({ title, budget, progress, status, onClick }: {
   status: string;
   onClick: () => void;
 }) {
+  const { t } = useLanguage();
   const isCompleted = status === 'completed';
 
   return (
@@ -317,15 +350,15 @@ function ActivityCard({ title, budget, progress, status, onClick }: {
         <h3 className="font-semibold text-gray-900 text-sm flex-1">{title}</h3>
         {isCompleted && (
           <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded-lg font-semibold whitespace-nowrap ml-2">
-            完了
+            {t('completed')}
           </span>
         )}
       </div>
-      <p className="text-xs text-gray-600 mb-3">予算: {budget} VND</p>
+      <p className="text-xs text-gray-600 mb-3">{t('budget')}: {budget} VND</p>
 
       <div className="mb-2">
         <div className="flex items-center justify-between text-xs mb-1">
-          <span className="text-gray-600">進捗度</span>
+          <span className="text-gray-600">{t('progress')}</span>
           <span className={`font-semibold ${isCompleted ? 'text-emerald-600' : 'text-blue-600'}`}>
             {progress}%
           </span>
@@ -339,7 +372,7 @@ function ActivityCard({ title, budget, progress, status, onClick }: {
       </div>
 
       <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-        <span className="text-xs text-blue-600 font-medium">詳細を見る</span>
+        <span className="text-xs text-blue-600 font-medium">{t('view_details')}</span>
         <span className="text-blue-600">→</span>
       </div>
     </button>
@@ -352,6 +385,8 @@ function ReceiptCard({ date, item, amount, verified }: {
   amount: string;
   verified: boolean;
 }) {
+  const { t } = useLanguage();
+
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
       <div className="flex items-start justify-between mb-2">
@@ -361,16 +396,18 @@ function ReceiptCard({ date, item, amount, verified }: {
         </div>
         {verified ? (
           <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded-lg font-semibold whitespace-nowrap">
-            ✓ 確認済み
+            ✓ {t('verified')}
           </span>
         ) : (
           <span className="bg-amber-100 text-amber-700 text-xs px-2 py-1 rounded-lg font-semibold whitespace-nowrap">
-            確認待ち
+            {t('pending')}
           </span>
         )}
       </div>
       <p className="text-sm font-bold text-gray-900">{amount}</p>
-      <button className="mt-2 text-xs text-blue-600 underline hover:text-blue-700">画像を見る</button>
+      <button className="mt-2 text-xs text-blue-600 underline hover:text-blue-700">
+        {t('view_details')}
+      </button>
     </div>
   );
 }

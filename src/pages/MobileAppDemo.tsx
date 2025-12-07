@@ -8,6 +8,7 @@ import {
   MobileSettings,
   useFiscalYearData
 } from '../components/mobile';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const DEMO_COMMUNITY_ID = 'a0000001-0000-0000-0000-000000000000';
 const DEMO_FISCAL_YEAR_ID_2025 = 'ffffffff-ffff-ffff-ffff-ffffffffffff';
@@ -20,6 +21,7 @@ const DEMO_USERS: DemoUser[] = [
 ];
 
 export default function MobileAppDemo() {
+  const { t } = useLanguage();
   const [selectedUser, setSelectedUser] = useState<DemoUser | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [selectedYear, setSelectedYear] = useState(2025);
@@ -137,7 +139,7 @@ export default function MobileAppDemo() {
             <div className="bg-white border-t border-gray-200 flex">
               <TabButton
                 icon="🏠"
-                label="Home"
+                label={t('home')}
                 active={activeTab === 'home'}
                 onClick={() => {
                   setActiveTab('home');
@@ -146,7 +148,7 @@ export default function MobileAppDemo() {
               />
               <TabButton
                 icon="📋"
-                label="Plan"
+                label={t('plan')}
                 active={activeTab === 'plan'}
                 onClick={() => {
                   setActiveTab('plan');
@@ -155,7 +157,7 @@ export default function MobileAppDemo() {
               />
               <TabButton
                 icon="📊"
-                label="Activity"
+                label={t('activity')}
                 active={activeTab === 'activity'}
                 onClick={() => {
                   setActiveTab('activity');
@@ -164,7 +166,7 @@ export default function MobileAppDemo() {
               />
               <TabButton
                 icon="⚙️"
-                label="Settings"
+                label={t('settings')}
                 active={activeTab === 'settings'}
                 onClick={() => {
                   setActiveTab('settings');
