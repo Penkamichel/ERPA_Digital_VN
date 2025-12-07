@@ -29,6 +29,7 @@ export interface FiscalYearData {
   activityCount: number;
   completedCount: number;
   ongoingCount: number;
+  approvedCount: number;
   workflowStatus: WorkflowStatus;
 }
 

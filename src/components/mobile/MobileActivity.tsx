@@ -68,6 +68,7 @@ export function MobileActivity({ user, selectedYear, setSelectedYear, fiscalYear
         .select('id, activity_name, total_budget, status, period_start, period_end')
         .eq('community_id', community.id)
         .eq('fiscal_year_id', fy.id)
+        .in('status', ['approved', 'ongoing', 'completed'])
         .order('created_at', { ascending: false });
 
       setActivities(activitiesData || []);

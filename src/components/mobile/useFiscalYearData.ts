@@ -46,7 +46,8 @@ export function useFiscalYearData(communityName: string, selectedYear: number) {
         .from('plan_activities')
         .select('id, total_budget, status')
         .eq('community_id', community.id)
-        .eq('fiscal_year_id', fy.id);
+        .eq('fiscal_year_id', fy.id)
+        .in('status', ['approved', 'ongoing', 'completed']);
 
       const { data: workflow } = await supabase
         .from('workflow_status')
@@ -59,6 +60,7 @@ export function useFiscalYearData(communityName: string, selectedYear: number) {
       const activityCount = activities?.length || 0;
       const completedCount = activities?.filter(a => a.status === 'completed').length || 0;
       const ongoingCount = activities?.filter(a => a.status === 'ongoing').length || 0;
+      const approvedCount = activities?.filter(a => a.status === 'approved').length || 0;
 
       const activityIds = activities?.map(a => a.id) || [];
       let totalSpent = 0;
@@ -92,6 +94,7 @@ export function useFiscalYearData(communityName: string, selectedYear: number) {
         activityCount,
         completedCount,
         ongoingCount,
+        approvedCount,
         workflowStatus: {
           fundRegistrationCompleted: workflow?.fund_registration_completed || false,
           meetingScheduledCompleted: workflow?.meeting_scheduled_completed || false,
