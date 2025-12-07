@@ -5,6 +5,7 @@ import { FundRegistrationForm } from './forms/FundRegistrationForm';
 import { IdeaRegistrationForm } from './forms/IdeaRegistrationForm';
 import { MeetingRegistrationForm } from './forms/MeetingRegistrationForm';
 import { MeetingMinutesForm } from './forms/MeetingMinutesForm';
+import { MeetingMinutesView } from './forms/MeetingMinutesView';
 import { PlanBudgetForm } from './forms/PlanBudgetForm';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -25,6 +26,7 @@ export function MobilePlan({ user, selectedYear, setSelectedYear, initialSubTab,
   const [showIdeaForm, setShowIdeaForm] = useState(false);
   const [showMeetingForm, setShowMeetingForm] = useState(false);
   const [showMinutesForm, setShowMinutesForm] = useState(false);
+  const [showMinutesView, setShowMinutesView] = useState(false);
   const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
   const [showPlanForm, setShowPlanForm] = useState(false);
 
@@ -84,6 +86,18 @@ export function MobilePlan({ user, selectedYear, setSelectedYear, initialSubTab,
           setShowMinutesForm(false);
           setSelectedMeetingId(null);
           window.location.reload();
+        }}
+      />
+    );
+  }
+
+  if (showMinutesView && selectedMeetingId) {
+    return (
+      <MeetingMinutesView
+        meetingId={selectedMeetingId}
+        onBack={() => {
+          setShowMinutesView(false);
+          setSelectedMeetingId(null);
         }}
       />
     );
@@ -149,6 +163,10 @@ export function MobilePlan({ user, selectedYear, setSelectedYear, initialSubTab,
             onOpenMinutesForm={(meetingId) => {
               setSelectedMeetingId(meetingId);
               setShowMinutesForm(true);
+            }}
+            onViewMinutes={(meetingId) => {
+              setSelectedMeetingId(meetingId);
+              setShowMinutesView(true);
             }}
           />
         )}
@@ -344,12 +362,14 @@ function MeetingsTab({
   fiscalYearId,
   onOpenForm,
   onOpenMinutesForm,
+  onViewMinutes,
 }: {
   user: DemoUser;
   communityId: string;
   fiscalYearId: string;
   onOpenForm: () => void;
   onOpenMinutesForm: (meetingId: string) => void;
+  onViewMinutes: (meetingId: string) => void;
 }) {
   const { t } = useLanguage();
   const [meetings, setMeetings] = useState<any[]>([]);
@@ -405,6 +425,7 @@ function MeetingsTab({
             meeting={meeting}
             user={user}
             onRegisterMinutes={() => onOpenMinutesForm(meeting.id)}
+            onViewMinutes={() => onViewMinutes(meeting.id)}
           />
         ))
       )}
@@ -474,10 +495,12 @@ function MeetingCard({
   meeting,
   user,
   onRegisterMinutes,
+  onViewMinutes,
 }: {
   meeting: any;
   user: DemoUser;
   onRegisterMinutes: () => void;
+  onViewMinutes: () => void;
 }) {
   const { t } = useLanguage();
 
@@ -547,6 +570,14 @@ function MeetingCard({
           className="mt-3 w-full bg-emerald-600 text-white rounded-lg py-2 text-xs font-semibold hover:bg-emerald-700 transition-colors"
         >
           {t('register_minutes')}
+        </button>
+      )}
+      {meeting.status === 'completed' && (
+        <button
+          onClick={onViewMinutes}
+          className="mt-3 w-full bg-blue-100 text-blue-600 rounded-lg py-2 text-xs font-semibold hover:bg-blue-200 transition-colors"
+        >
+          {t('view_minutes')}
         </button>
       )}
     </div>
