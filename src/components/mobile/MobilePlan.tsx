@@ -153,7 +153,7 @@ export function MobilePlan({ user, selectedYear, setSelectedYear, initialSubTab,
 
       <div className="p-4 space-y-3">
         {subTab === 'fund' && <FundRegistrationTab user={user} selectedYear={selectedYear} communityId={communityId} fiscalYearId={fiscalYearId} onOpenForm={() => setShowFundForm(true)} />}
-        {subTab === 'ideas' && <IdeasTab user={user} selectedYear={selectedYear} setSelectedYear={setSelectedYear} onOpenForm={() => setShowIdeaForm(true)} />}
+        {subTab === 'ideas' && <IdeasTab user={user} selectedYear={selectedYear} setSelectedYear={setSelectedYear} onOpenForm={() => setShowIdeaForm(true)} communityId={communityId} />}
         {subTab === 'meetings' && (
           <MeetingsTab
             user={user}
@@ -304,25 +304,114 @@ function FundRegistrationTab({ user, selectedYear, communityId, fiscalYearId, on
   );
 }
 
-function IdeasTab({ user, selectedYear, setSelectedYear, onOpenForm }: { user: DemoUser; selectedYear: number; setSelectedYear: (y: number) => void; onOpenForm: () => void }) {
+function IdeasTab({ user, selectedYear, setSelectedYear, onOpenForm, communityId }: { user: DemoUser; selectedYear: number; setSelectedYear: (y: number) => void; onOpenForm: () => void; communityId: string }) {
   const { t } = useLanguage();
+  const [ideas, setIdeas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fiscalYears, setFiscalYears] = useState<any[]>([]);
+  const [selectedIdea, setSelectedIdea] = useState<any | null>(null);
+
+  useEffect(() => {
+    loadFiscalYears();
+  }, []);
+
+  useEffect(() => {
+    if (fiscalYears.length > 0) {
+      loadIdeas();
+    }
+  }, [selectedYear, fiscalYears, communityId]);
+
+  const loadFiscalYears = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('fiscal_years')
+        .select('*')
+        .order('year', { ascending: false });
+
+      if (error) throw error;
+      setFiscalYears(data || []);
+    } catch (error) {
+      console.error('Error loading fiscal years:', error);
+    }
+  };
+
+  const loadIdeas = async () => {
+    setLoading(true);
+    try {
+      const currentFiscalYear = fiscalYears.find(fy => fy.year === selectedYear);
+      if (!currentFiscalYear) {
+        setIdeas([]);
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('ideas')
+        .select('*')
+        .eq('community_id', communityId)
+        .eq('fiscal_year_id', currentFiscalYear.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setIdeas(data || []);
+    } catch (error) {
+      console.error('Error loading ideas:', error);
+      setIdeas([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusTranslationKey = (status: string) => {
+    const statusMap: Record<string, string> = {
+      'approved': 'selected',
+      'under_review': 'under_review',
+      'submitted': 'submitted',
+      'rejected': 'not_selected',
+    };
+    return statusMap[status] || status;
+  };
+
+  const getStatusColor = (status: string) => {
+    const colorMap: Record<string, string> = {
+      'approved': 'emerald',
+      'under_review': 'blue',
+      'submitted': 'amber',
+      'rejected': 'red',
+    };
+    return colorMap[status] || 'gray';
+  };
+
+  const availableYears = fiscalYears.map(fy => fy.year);
+  const currentYear = new Date().getFullYear();
+
+  if (selectedIdea) {
+    return (
+      <IdeaDetailView
+        idea={selectedIdea}
+        onBack={() => setSelectedIdea(null)}
+      />
+    );
+  }
 
   return (
     <>
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-700">{t('year')}:</span>
+      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 mb-3">
+        <label className="block text-xs font-semibold text-gray-700 mb-2">{t('fiscal_year')}</label>
         <select
           value={selectedYear}
-          onChange={(e) => setSelectedYear(Number(e.target.value))}
-          className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+          onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
         >
-          <option value={2025}>2025 ({t('this_year')})</option>
-          <option value={2024}>2024</option>
-          <option value={2023}>2023</option>
+          {availableYears.map(year => (
+            <option key={year} value={year}>
+              {year} {year === currentYear && `(${t('this_year')})`}
+            </option>
+          ))}
         </select>
       </div>
 
-      {(user.role === 'Community Member' || user.role === 'CMB') && selectedYear === 2025 && (
+      {(user.role === 'Community Member' || user.role === 'CMB') && selectedYear === currentYear && (
         <button
           onClick={onOpenForm}
           className="w-full bg-blue-600 text-white rounded-xl py-3 font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
@@ -332,27 +421,21 @@ function IdeasTab({ user, selectedYear, setSelectedYear, onOpenForm }: { user: D
         </button>
       )}
 
-      {selectedYear === 2025 && (
-        <>
-          <IdeaCard title="コミュニティの種子銀行" status="選ばれた" color="emerald" by="Somchai Prasert" />
-          <IdeaCard title="堆肥化施設の建設" status="検討中" color="blue" by="Nittaya Wongsawat" />
-          <IdeaCard title="若者向け森林教育" status="提出済み" color="amber" by="Prakit Thongchai" />
-        </>
-      )}
-
-      {selectedYear === 2024 && (
-        <>
-          <IdeaCard title="薪の効率的な使用訓練" status="選ばれた" color="emerald" by="Village Member" />
-          <IdeaCard title="エコツーリズム開発" status="選ばれなかった" color="red" by="Tourism Committee" />
-          <IdeaCard title="伝統工芸品製作所" status="選ばれた" color="emerald" by="Craft Group" />
-        </>
-      )}
-
-      {selectedYear === 2023 && (
-        <>
-          <IdeaCard title="森林パトロール強化" status="選ばれた" color="emerald" by="Forest Committee" />
-          <IdeaCard title="NTFP採取訓練" status="選ばれた" color="emerald" by="NTFP Group" />
-        </>
+      {loading ? (
+        <div className="text-center py-8 text-gray-500">{t('loading')}</div>
+      ) : ideas.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">{t('no_ideas_this_year')}</div>
+      ) : (
+        ideas.map(idea => (
+          <IdeaCard
+            key={idea.id}
+            title={idea.title}
+            status={t(getStatusTranslationKey(idea.status))}
+            color={getStatusColor(idea.status)}
+            by={idea.submitted_by}
+            onClick={() => setSelectedIdea(idea)}
+          />
+        ))
       )}
     </>
   );
@@ -523,17 +606,21 @@ function PlanInputTab({ user, onOpenForm }: { user: DemoUser; onOpenForm: () => 
   );
 }
 
-function IdeaCard({ title, status, color, by }: { title: string; status: string; color: string; by: string }) {
+function IdeaCard({ title, status, color, by, onClick }: { title: string; status: string; color: string; by: string; onClick?: () => void }) {
   const { t } = useLanguage();
   const colors: Record<string, string> = {
     emerald: 'bg-emerald-500',
     blue: 'bg-blue-500',
     amber: 'bg-amber-500',
     red: 'bg-red-500',
+    gray: 'bg-gray-500',
   };
 
   return (
-    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+    <div
+      onClick={onClick}
+      className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 cursor-pointer hover:shadow-md transition-shadow"
+    >
       <div className="flex items-start justify-between mb-2">
         <h3 className="font-semibold text-gray-900 flex-1 text-sm">{title}</h3>
         <span className={`${colors[color]} text-white text-xs px-2 py-1 rounded-lg font-semibold whitespace-nowrap ml-2`}>
@@ -650,6 +737,142 @@ function PlanCard({ title, status }: { title: string; status: string }) {
         <p className="text-xs text-blue-600 mt-1">{status}</p>
       </div>
       <ChevronRight className="w-5 h-5 text-gray-400" />
+    </div>
+  );
+}
+
+function IdeaDetailView({ idea, onBack }: { idea: any; onBack: () => void }) {
+  const { t } = useLanguage();
+
+  const getStatusTranslationKey = (status: string) => {
+    const statusMap: Record<string, string> = {
+      'approved': 'selected',
+      'under_review': 'under_review',
+      'submitted': 'submitted',
+      'rejected': 'not_selected',
+    };
+    return statusMap[status] || status;
+  };
+
+  const getStatusColor = (status: string) => {
+    const colorMap: Record<string, string> = {
+      'approved': 'bg-emerald-100 text-emerald-700',
+      'under_review': 'bg-blue-100 text-blue-700',
+      'submitted': 'bg-amber-100 text-amber-700',
+      'rejected': 'bg-red-100 text-red-700',
+    };
+    return colorMap[status] || 'bg-gray-100 text-gray-700';
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+  };
+
+  const formatCurrency = (amount: number | null) => {
+    if (!amount) return '-';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'THB',
+    }).format(amount);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="sticky top-0 bg-white shadow-sm z-10">
+        <div className="flex items-center gap-3 p-4">
+          <button
+            onClick={onBack}
+            className="text-blue-600 hover:text-blue-700 font-semibold text-sm"
+          >
+            ← {t('back')}
+          </button>
+        </div>
+      </div>
+
+      <div className="p-4 space-y-4">
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+          <div className="flex items-start justify-between mb-3">
+            <h2 className="text-lg font-bold text-gray-900 flex-1">{idea.title}</h2>
+            <span className={`${getStatusColor(idea.status)} text-xs px-3 py-1 rounded-lg font-semibold whitespace-nowrap ml-2`}>
+              {t(getStatusTranslationKey(idea.status))}
+            </span>
+          </div>
+
+          <div className="space-y-3 text-sm">
+            <div>
+              <p className="text-gray-600 font-semibold">{t('submitter_label')}</p>
+              <p className="text-gray-900">{idea.submitted_by}</p>
+            </div>
+
+            {idea.category && (
+              <div>
+                <p className="text-gray-600 font-semibold">{t('category')}</p>
+                <p className="text-gray-900 capitalize">{idea.category}</p>
+              </div>
+            )}
+
+            {idea.submission_date && (
+              <div>
+                <p className="text-gray-600 font-semibold">{t('submission_date')}</p>
+                <p className="text-gray-900">{formatDate(idea.submission_date)}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {idea.description && (
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+            <h3 className="text-sm font-bold text-gray-900 mb-2">{t('description')}</h3>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">{idea.description}</p>
+          </div>
+        )}
+
+        {idea.problem_statement && (
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+            <h3 className="text-sm font-bold text-gray-900 mb-2">{t('problem_statement')}</h3>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">{idea.problem_statement}</p>
+          </div>
+        )}
+
+        {idea.expected_location && (
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+            <h3 className="text-sm font-bold text-gray-900 mb-2">{t('expected_location')}</h3>
+            <p className="text-sm text-gray-700">{idea.expected_location}</p>
+          </div>
+        )}
+
+        {idea.expected_beneficiaries && (
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+            <h3 className="text-sm font-bold text-gray-900 mb-2">{t('expected_beneficiaries')}</h3>
+            <p className="text-sm text-gray-700">{idea.expected_beneficiaries}</p>
+          </div>
+        )}
+
+        {idea.estimated_budget_total && (
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+            <h3 className="text-sm font-bold text-gray-900 mb-2">{t('estimated_budget')}</h3>
+            <p className="text-sm text-gray-700">{formatCurrency(idea.estimated_budget_total)}</p>
+            {idea.estimated_community_contribution && (
+              <p className="text-xs text-gray-600 mt-1">
+                {t('community_contribution')}: {idea.estimated_community_contribution}
+              </p>
+            )}
+          </div>
+        )}
+
+        {idea.alignment_with_decree && Array.isArray(idea.alignment_with_decree) && idea.alignment_with_decree.length > 0 && (
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+            <h3 className="text-sm font-bold text-gray-900 mb-2">{t('alignment_with_decree')}</h3>
+            <ul className="list-disc list-inside space-y-1">
+              {idea.alignment_with_decree.map((item: string, index: number) => (
+                <li key={index} className="text-sm text-gray-700">{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
