@@ -61,6 +61,7 @@ export function useFiscalYearData(communityName: string, selectedYear: number) {
       const completedCount = activities?.filter(a => a.status === 'completed').length || 0;
       const ongoingCount = activities?.filter(a => a.status === 'ongoing').length || 0;
       const approvedCount = activities?.filter(a => a.status === 'approved').length || 0;
+      const allActivitiesCompleted = activityCount > 0 && activityCount === completedCount;
 
       const activityIds = activities?.map(a => a.id) || [];
       let totalSpent = 0;
@@ -95,6 +96,7 @@ export function useFiscalYearData(communityName: string, selectedYear: number) {
         completedCount,
         ongoingCount,
         approvedCount,
+        allActivitiesCompleted,
         workflowStatus: {
           fundRegistrationCompleted: workflow?.fund_registration_completed || false,
           meetingScheduledCompleted: workflow?.meeting_scheduled_completed || false,

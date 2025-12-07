@@ -65,7 +65,7 @@ export function MobileWorkflow({ fiscalYearData, setActiveTab, setSubTab }: Mobi
       id: 5,
       name: t('implement_activities_step'),
       description: t('implement_activities_desc'),
-      status: ws.activitiesOngoing || ws.finalReportSubmitted ? 'completed' :
+      status: fiscalYearData.allActivitiesCompleted ? 'completed' :
               getStepStatus(false, ws.planCreatedCompleted),
       action: t('go_to_activity_page'),
       navigateTo: { tab: 'activity', subTab: 'activities' }
@@ -74,7 +74,7 @@ export function MobileWorkflow({ fiscalYearData, setActiveTab, setSubTab }: Mobi
       id: 6,
       name: t('create_final_report_step'),
       description: t('create_final_report_desc'),
-      status: getStepStatus(ws.finalReportSubmitted, ws.activitiesOngoing),
+      status: getStepStatus(ws.finalReportSubmitted, fiscalYearData.allActivitiesCompleted),
       action: ws.finalReportSubmitted ? t('view_report') : t('go_to_report_page'),
       navigateTo: { tab: 'activity', subTab: 'reporting' }
     },
