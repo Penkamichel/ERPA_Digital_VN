@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Info } from 'lucide-react';
 import { DemoUser, FiscalYearData, NavigationProps } from './types';
 import { MobileWorkflow } from './MobileWorkflow';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface MobileHomeProps extends NavigationProps {
   user: DemoUser;
@@ -20,6 +21,7 @@ export function MobileHome({
   setActiveTab,
   setSubTab
 }: MobileHomeProps) {
+  const { t } = useLanguage();
   const [showInfo, setShowInfo] = useState(false);
 
   const nextActions = [
@@ -47,15 +49,15 @@ export function MobileHome({
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-700">年度:</span>
+        <span className="text-sm text-gray-700">{t('year')}:</span>
         <select
           value={selectedYear}
           onChange={(e) => setSelectedYear(Number(e.target.value))}
           className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white"
         >
-          <option value={2025}>2025年（今年）</option>
-          <option value={2024}>2024年</option>
-          <option value={2023}>2023年</option>
+          <option value={2025}>2025 ({t('this_year')})</option>
+          <option value={2024}>2024</option>
+          <option value={2023}>2023</option>
         </select>
       </div>
 
@@ -64,7 +66,7 @@ export function MobileHome({
       ) : fiscalYearData ? (
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-5 text-white shadow-lg">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm opacity-90">今年のコミュニティの予算 ({selectedYear})</p>
+            <p className="text-sm opacity-90">{t('community_budget_this_year')} ({selectedYear})</p>
             <button
               onClick={() => setShowInfo(!showInfo)}
               className="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-30 transition-colors"
@@ -79,21 +81,21 @@ export function MobileHome({
             <div className="flex justify-between text-sm">
               <span className="flex items-center gap-1">
                 <span>💰</span>
-                <span>今年使えるお金</span>
+                <span>{t('total_budget')}</span>
               </span>
               <span className="font-semibold">{formatAmount(fiscalYearData.totalBudget)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="flex items-center gap-1">
                 <span>✅</span>
-                <span>今まで使った分</span>
+                <span>{t('used')}</span>
               </span>
               <span className="font-semibold">{formatAmount(fiscalYearData.totalSpent)}</span>
             </div>
             <div className="h-2 bg-white bg-opacity-30 rounded-full overflow-hidden mt-2">
               <div className="h-full bg-white rounded-full transition-all" style={{ width: `${usagePercent}%` }}></div>
             </div>
-            <p className="text-xs text-center opacity-90">使った割合: {usagePercent}%</p>
+            <p className="text-xs text-center opacity-90">{usagePercent}% {t('used')}</p>
           </div>
         </div>
       ) : (

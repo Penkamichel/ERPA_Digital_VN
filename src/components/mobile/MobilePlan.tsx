@@ -6,6 +6,7 @@ import { IdeaRegistrationForm } from './forms/IdeaRegistrationForm';
 import { MeetingMinutesForm } from './forms/MeetingMinutesForm';
 import { PlanBudgetForm } from './forms/PlanBudgetForm';
 import { supabase } from '../../lib/supabase';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface MobilePlanProps {
   user: DemoUser;
@@ -17,6 +18,7 @@ interface MobilePlanProps {
 }
 
 export function MobilePlan({ user, selectedYear, setSelectedYear, initialSubTab, communityId, fiscalYearId }: MobilePlanProps) {
+  const { t } = useLanguage();
   const [subTab, setSubTab] = useState<PlanSubTab>(initialSubTab as PlanSubTab || 'fund');
   const [showFundForm, setShowFundForm] = useState(false);
   const [showIdeaForm, setShowIdeaForm] = useState(false);
@@ -82,8 +84,8 @@ export function MobilePlan({ user, selectedYear, setSelectedYear, initialSubTab,
   return (
     <div>
       <div className="bg-white border-b border-gray-200 px-4 py-3">
-        <h1 className="text-xl font-bold text-gray-900">計画・アイデア</h1>
-        <p className="text-xs text-gray-600">活動の計画とアイデア管理</p>
+        <h1 className="text-xl font-bold text-gray-900">{t('plan_and_ideas')}</h1>
+        <p className="text-xs text-gray-600">{t('plan_and_ideas_subtitle')}</p>
       </div>
 
       <div className="bg-white border-b border-gray-200 flex text-xs overflow-x-auto">
@@ -91,25 +93,25 @@ export function MobilePlan({ user, selectedYear, setSelectedYear, initialSubTab,
           onClick={() => setSubTab('fund')}
           className={`px-4 py-3 font-semibold whitespace-nowrap border-b-2 ${subTab === 'fund' ? 'text-blue-600 border-blue-600' : 'text-gray-600 border-transparent'}`}
         >
-          Fund登録
+          {t('fund_registration')}
         </button>
         <button
           onClick={() => setSubTab('ideas')}
           className={`px-4 py-3 font-semibold whitespace-nowrap border-b-2 ${subTab === 'ideas' ? 'text-blue-600 border-blue-600' : 'text-gray-600 border-transparent'}`}
         >
-          アイデア
+          {t('ideas')}
         </button>
         <button
           onClick={() => setSubTab('meetings')}
           className={`px-4 py-3 font-semibold whitespace-nowrap border-b-2 ${subTab === 'meetings' ? 'text-blue-600 border-blue-600' : 'text-gray-600 border-transparent'}`}
         >
-          会議
+          {t('meetings')}
         </button>
         <button
           onClick={() => setSubTab('plan')}
           className={`px-4 py-3 font-semibold whitespace-nowrap border-b-2 ${subTab === 'plan' ? 'text-blue-600 border-blue-600' : 'text-gray-600 border-transparent'}`}
         >
-          計画入力
+          {t('plan_input')}
         </button>
       </div>
 
@@ -130,6 +132,7 @@ function FundRegistrationTab({ user, selectedYear, communityId, fiscalYearId, on
   fiscalYearId: string;
   onOpenForm: () => void
 }) {
+  const { t } = useLanguage();
   const [fundRegistrations, setFundRegistrations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -183,9 +186,9 @@ function FundRegistrationTab({ user, selectedYear, communityId, fiscalYearId, on
   return (
     <>
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <p className="text-sm text-blue-900 font-medium mb-2">💰 Fund登録について</p>
+        <p className="text-sm text-blue-900 font-medium mb-2">💰 {t('fund_about')}</p>
         <p className="text-xs text-blue-800">
-          各年度の初めに、承認された予算額を登録します。この金額が、その年の活動予算の基準となります。
+          {t('fund_about_desc')}
         </p>
       </div>
 
@@ -194,7 +197,7 @@ function FundRegistrationTab({ user, selectedYear, communityId, fiscalYearId, on
           onClick={onOpenForm}
           className="w-full bg-blue-600 text-white rounded-xl py-3 font-semibold hover:bg-blue-700 transition-colors"
         >
-          Fund登録情報を編集
+          {t('edit_fund_registration')}
         </button>
       )}
 
@@ -204,40 +207,40 @@ function FundRegistrationTab({ user, selectedYear, communityId, fiscalYearId, on
         </div>
       ) : fundRegistrations.length === 0 ? (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-          <p className="text-sm text-amber-900">まだFund登録がありません</p>
+          <p className="text-sm text-amber-900">{t('no_fund_registration')}</p>
         </div>
       ) : (
         fundRegistrations.map((fund) => (
           <div key={fund.id} className="bg-white rounded-xl p-4 border border-gray-200">
             <div className="flex justify-between items-start mb-3">
               <div>
-                <p className="text-sm font-semibold text-gray-900">FY{selectedYear} Fund登録</p>
+                <p className="text-sm font-semibold text-gray-900">FY{selectedYear} {t('fund_registration')}</p>
                 <p className="text-xs text-gray-600 mt-1">{user.communityName}</p>
               </div>
               <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded-lg font-semibold">
-                {fund.status === 'registered' ? '承認済み' : fund.status}
+                {fund.status === 'registered' ? t('approved') : fund.status}
               </span>
             </div>
 
             <div className="space-y-2 text-sm">
               <div className="flex justify-between py-2 border-b border-gray-100">
-                <span className="text-gray-600">承認金額</span>
+                <span className="text-gray-600">{t('approved_amount')}</span>
                 <span className="font-semibold text-gray-900">{formatAmount(fund.amount_received_vnd)}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100">
-                <span className="text-gray-600">資金源</span>
+                <span className="text-gray-600">{t('fund_source')}</span>
                 <span className="text-gray-900 text-xs">{fund.fund_source}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100">
-                <span className="text-gray-600">支払日</span>
+                <span className="text-gray-600">{t('payment_date')}</span>
                 <span className="text-gray-900">{formatDate(fund.payment_date)}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-100">
-                <span className="text-gray-600">支払者</span>
+                <span className="text-gray-600">{t('payer_name')}</span>
                 <span className="text-gray-900 text-xs">{fund.payer_name}</span>
               </div>
               <div className="flex justify-between py-2">
-                <span className="text-gray-600">登録者</span>
+                <span className="text-gray-600">{t('recorded_by')}</span>
                 <span className="text-gray-900">{fund.recorded_by}</span>
               </div>
             </div>
@@ -249,18 +252,20 @@ function FundRegistrationTab({ user, selectedYear, communityId, fiscalYearId, on
 }
 
 function IdeasTab({ user, selectedYear, setSelectedYear, onOpenForm }: { user: DemoUser; selectedYear: number; setSelectedYear: (y: number) => void; onOpenForm: () => void }) {
+  const { t } = useLanguage();
+
   return (
     <>
       <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-700">年度:</span>
+        <span className="text-sm text-gray-700">{t('year')}:</span>
         <select
           value={selectedYear}
           onChange={(e) => setSelectedYear(Number(e.target.value))}
           className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
         >
-          <option value={2025}>2025年（今年）</option>
-          <option value={2024}>2024年</option>
-          <option value={2023}>2023年</option>
+          <option value={2025}>2025 ({t('this_year')})</option>
+          <option value={2024}>2024</option>
+          <option value={2023}>2023</option>
         </select>
       </div>
 
@@ -270,7 +275,7 @@ function IdeasTab({ user, selectedYear, setSelectedYear, onOpenForm }: { user: D
           className="w-full bg-blue-600 text-white rounded-xl py-3 font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
         >
           <span className="text-xl">💡</span>
-          新しいアイデアを提出
+          {t('new_idea')}
         </button>
       )}
 
@@ -301,6 +306,8 @@ function IdeasTab({ user, selectedYear, setSelectedYear, onOpenForm }: { user: D
 }
 
 function MeetingsTab({ user, onOpenForm }: { user: DemoUser; onOpenForm: () => void }) {
+  const { t } = useLanguage();
+
   return (
     <>
       {user.role === 'CMB' && (
@@ -308,31 +315,31 @@ function MeetingsTab({ user, onOpenForm }: { user: DemoUser; onOpenForm: () => v
           onClick={onOpenForm}
           className="w-full bg-blue-600 text-white rounded-xl py-3 font-semibold hover:bg-blue-700 transition-colors"
         >
-          新しい会議を設定
+          {t('new_meeting')}
         </button>
       )}
 
       <MeetingCard
         date="2025年11月20日"
-        title="活動計画会議"
-        chair="村長"
+        title={t('planning_meeting')}
+        chair={t('village_head')}
         participants={45}
-        status="予定"
+        status={t('scheduled')}
       />
       <MeetingCard
         date="2025年10月15日"
-        title="予算承認会議"
-        chair="CMBリーダー"
+        title={t('budget_approval_meeting')}
+        chair={t('cmb_leader')}
         participants={38}
-        status="完了"
+        status={t('completed')}
         hasMinutes
       />
       <MeetingCard
         date="2025年9月10日"
-        title="第3四半期進捗レビュー"
-        chair="森林官"
+        title={t('quarterly_review')}
+        chair={t('forest_officer')}
         participants={42}
-        status="完了"
+        status={t('completed')}
         hasMinutes
       />
     </>
@@ -340,10 +347,12 @@ function MeetingsTab({ user, onOpenForm }: { user: DemoUser; onOpenForm: () => v
 }
 
 function PlanInputTab({ user, onOpenForm }: { user: DemoUser; onOpenForm: () => void }) {
+  const { t } = useLanguage();
+
   if (user.role !== 'CMB') {
     return (
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-        <p className="text-sm text-amber-900">この機能はCMBメンバーのみ利用できます</p>
+        <p className="text-sm text-amber-900">{t('cmb_only')}</p>
       </div>
     );
   }
@@ -351,9 +360,9 @@ function PlanInputTab({ user, onOpenForm }: { user: DemoUser; onOpenForm: () => 
   return (
     <>
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <p className="text-sm text-blue-900 font-medium mb-2">📝 計画作成ガイド</p>
+        <p className="text-sm text-blue-900 font-medium mb-2">📝 {t('planning_guide')}</p>
         <p className="text-xs text-blue-800">
-          選ばれたアイデアに基づいて、詳しい活動計画を作成します。
+          {t('planning_guide_desc')}
         </p>
       </div>
 
@@ -361,19 +370,20 @@ function PlanInputTab({ user, onOpenForm }: { user: DemoUser; onOpenForm: () => 
         onClick={onOpenForm}
         className="w-full bg-emerald-600 text-white rounded-xl py-3 font-semibold hover:bg-emerald-700 transition-colors"
       >
-        新しい活動計画を作成
+        {t('create_new_plan')}
       </button>
 
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-gray-900">作成済みの計画</h3>
-        <PlanCard title="森林パトロール・保護活動" status="予算入力中" />
-        <PlanCard title="非木材林産物の採取" status="承認済み" />
+        <h3 className="text-sm font-semibold text-gray-900">{t('created_plans')}</h3>
+        <PlanCard title={t('forest_patrol')} status={t('budget_input')} />
+        <PlanCard title={t('ntfp_collection')} status={t('approved')} />
       </div>
     </>
   );
 }
 
 function IdeaCard({ title, status, color, by }: { title: string; status: string; color: string; by: string }) {
+  const { t } = useLanguage();
   const colors: Record<string, string> = {
     emerald: 'bg-emerald-500',
     blue: 'bg-blue-500',
@@ -389,7 +399,7 @@ function IdeaCard({ title, status, color, by }: { title: string; status: string;
           {status}
         </span>
       </div>
-      <p className="text-xs text-gray-500">提出者: {by}</p>
+      <p className="text-xs text-gray-500">{t('submitter_label')}: {by}</p>
     </div>
   );
 }
@@ -402,6 +412,8 @@ function MeetingCard({ date, title, chair, participants, status, hasMinutes }: {
   status: string;
   hasMinutes?: boolean;
 }) {
+  const { t } = useLanguage();
+
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
       <div className="flex items-start justify-between mb-2">
@@ -409,15 +421,15 @@ function MeetingCard({ date, title, chair, participants, status, hasMinutes }: {
           <p className="text-sm font-bold text-gray-900">{title}</p>
           <p className="text-xs text-gray-600 mt-1">{date}</p>
         </div>
-        {status === '予定' && (
-          <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-lg font-semibold whitespace-nowrap">予定</span>
+        {status === t('scheduled') && (
+          <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-lg font-semibold whitespace-nowrap">{status}</span>
         )}
       </div>
-      <p className="text-xs text-gray-600">議長: {chair}</p>
-      <p className="text-xs text-gray-500 mt-1">参加者: {participants}名</p>
+      <p className="text-xs text-gray-600">{t('chair')}: {chair}</p>
+      <p className="text-xs text-gray-500 mt-1">{t('participants')}: {participants}名</p>
       {hasMinutes && (
         <button className="mt-3 w-full bg-blue-100 text-blue-600 rounded-lg py-2 text-xs font-semibold hover:bg-blue-200 transition-colors">
-          議事録を見る
+          {t('view_minutes')}
         </button>
       )}
     </div>
