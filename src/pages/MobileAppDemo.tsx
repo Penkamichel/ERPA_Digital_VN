@@ -43,8 +43,8 @@ export default function MobileAppDemo() {
           </div>
 
           <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">ユーザーを選択</h2>
-            <p className="text-sm text-gray-600 mb-4">役割を選んでアプリを体験</p>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('select_user')}</h2>
+            <p className="text-sm text-gray-600 mb-4">{t('select_role_to_experience')}</p>
 
             <div className="space-y-3">
               {DEMO_USERS.map(user => (
@@ -69,7 +69,7 @@ export default function MobileAppDemo() {
           </div>
 
           <div className="text-center">
-            <p className="text-xs text-gray-500">Demo Mode • Supabase接続済み</p>
+            <p className="text-xs text-gray-500">{t('demo_mode_connected')}</p>
           </div>
         </div>
       </div>

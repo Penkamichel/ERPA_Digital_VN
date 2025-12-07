@@ -202,6 +202,9 @@ const translations: Record<Language, Record<string, string>> = {
     'community_contribution': 'Community Contribution',
     'alignment_with_decree': 'Alignment with Decree',
     'no_ideas_this_year': 'No ideas for this year',
+    'select_user': 'Select User',
+    'select_role_to_experience': 'Choose a role to experience the app',
+    'demo_mode_connected': 'Demo Mode • Connected to Supabase',
   },
   ja: {
     'home': 'ホーム',
@@ -394,6 +397,9 @@ const translations: Record<Language, Record<string, string>> = {
     'community_contribution': 'コミュニティ貢献',
     'alignment_with_decree': '政令との整合性',
     'no_ideas_this_year': 'この年度にアイデアはありません',
+    'select_user': 'ユーザーを選択',
+    'select_role_to_experience': '役割を選んでアプリを体験',
+    'demo_mode_connected': 'デモモード • Supabase接続済み',
   },
   vi: {
     'home': 'Trang chủ',
@@ -586,13 +592,16 @@ const translations: Record<Language, Record<string, string>> = {
     'community_contribution': 'Đóng góp của cộng đồng',
     'alignment_with_decree': 'Phù hợp với sắc lệnh',
     'no_ideas_this_year': 'Không có ý tưởng nào trong năm này',
+    'select_user': 'Chọn người dùng',
+    'select_role_to_experience': 'Chọn vai trò để trải nghiệm ứng dụng',
+    'demo_mode_connected': 'Chế độ Demo • Đã kết nối với Supabase',
   },
 };
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem('language');
-    return (saved as Language) || 'ja';
+    return (saved as Language) || 'en';
   });
 
   useEffect(() => {
