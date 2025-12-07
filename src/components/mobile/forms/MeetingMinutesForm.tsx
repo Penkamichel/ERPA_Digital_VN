@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Save, Users, Plus, X } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 
 interface MeetingMinutesFormProps {
   communityId: string;
   fiscalYearId: string;
+  meetingId?: string;
   onBack: () => void;
   onSuccess: () => void;
 }
@@ -15,8 +16,9 @@ interface VotingResult {
   total_attendees: number;
 }
 
-export function MeetingMinutesForm({ communityId, fiscalYearId, onBack, onSuccess }: MeetingMinutesFormProps) {
+export function MeetingMinutesForm({ communityId, fiscalYearId, meetingId, onBack, onSuccess }: MeetingMinutesFormProps) {
   const [loading, setLoading] = useState(false);
+  const [loadingMeeting, setLoadingMeeting] = useState(!!meetingId);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     chairperson: '',
@@ -29,6 +31,40 @@ export function MeetingMinutesForm({ communityId, fiscalYearId, onBack, onSucces
     voting_method: 'hands' as 'hands' | 'secret',
     approved_contents: '',
   });
+
+  useEffect(() => {
+    if (meetingId) {
+      loadMeetingData();
+    }
+  }, [meetingId]);
+
+  const loadMeetingData = async () => {
+    if (!meetingId) return;
+
+    setLoadingMeeting(true);
+    try {
+      const { data, error } = await supabase
+        .from('meetings')
+        .select('*')
+        .eq('id', meetingId)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setFormData(prev => ({
+          ...prev,
+          date: data.scheduled_date,
+          chairperson: data.chairperson || '',
+          agenda: data.agenda || '',
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading meeting:', error);
+    } finally {
+      setLoadingMeeting(false);
+    }
+  };
 
   const [votingResults, setVotingResults] = useState<VotingResult[]>([
     { content_item: '', agree_count: 0, total_attendees: 0 },
@@ -44,6 +80,7 @@ export function MeetingMinutesForm({ communityId, fiscalYearId, onBack, onSucces
         .insert({
           community_id: communityId,
           fiscal_year_id: fiscalYearId,
+          meeting_id: meetingId || null,
           date: formData.date,
           chairperson: formData.chairperson,
           participants_count: parseInt(formData.participants_count) || 0,
@@ -59,6 +96,16 @@ export function MeetingMinutesForm({ communityId, fiscalYearId, onBack, onSucces
         });
 
       if (error) throw error;
+
+      if (meetingId) {
+        await supabase
+          .from('meetings')
+          .update({
+            status: 'completed',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', meetingId);
+      }
 
       await supabase
         .from('workflow_status')
@@ -97,6 +144,17 @@ export function MeetingMinutesForm({ communityId, fiscalYearId, onBack, onSucces
     updated[index] = { ...updated[index], [field]: value };
     setVotingResults(updated);
   };
+
+  if (loadingMeeting) {
+    return (
+      <div className="h-full bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">会議情報を読み込んでいます...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full bg-gray-50 overflow-auto">

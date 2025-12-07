@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react';
 import { DemoUser, PlanSubTab } from './types';
 import { FundRegistrationForm } from './forms/FundRegistrationForm';
 import { IdeaRegistrationForm } from './forms/IdeaRegistrationForm';
+import { MeetingRegistrationForm } from './forms/MeetingRegistrationForm';
 import { MeetingMinutesForm } from './forms/MeetingMinutesForm';
 import { PlanBudgetForm } from './forms/PlanBudgetForm';
 import { supabase } from '../../lib/supabase';
@@ -23,6 +24,8 @@ export function MobilePlan({ user, selectedYear, setSelectedYear, initialSubTab,
   const [showFundForm, setShowFundForm] = useState(false);
   const [showIdeaForm, setShowIdeaForm] = useState(false);
   const [showMeetingForm, setShowMeetingForm] = useState(false);
+  const [showMinutesForm, setShowMinutesForm] = useState(false);
+  const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
   const [showPlanForm, setShowPlanForm] = useState(false);
 
   if (showFundForm) {
@@ -55,12 +58,31 @@ export function MobilePlan({ user, selectedYear, setSelectedYear, initialSubTab,
 
   if (showMeetingForm) {
     return (
-      <MeetingMinutesForm
+      <MeetingRegistrationForm
         communityId={communityId}
         fiscalYearId={fiscalYearId}
         onBack={() => setShowMeetingForm(false)}
         onSuccess={() => {
           setShowMeetingForm(false);
+          window.location.reload();
+        }}
+      />
+    );
+  }
+
+  if (showMinutesForm && selectedMeetingId) {
+    return (
+      <MeetingMinutesForm
+        communityId={communityId}
+        fiscalYearId={fiscalYearId}
+        meetingId={selectedMeetingId}
+        onBack={() => {
+          setShowMinutesForm(false);
+          setSelectedMeetingId(null);
+        }}
+        onSuccess={() => {
+          setShowMinutesForm(false);
+          setSelectedMeetingId(null);
           window.location.reload();
         }}
       />
@@ -118,7 +140,18 @@ export function MobilePlan({ user, selectedYear, setSelectedYear, initialSubTab,
       <div className="p-4 space-y-3">
         {subTab === 'fund' && <FundRegistrationTab user={user} selectedYear={selectedYear} communityId={communityId} fiscalYearId={fiscalYearId} onOpenForm={() => setShowFundForm(true)} />}
         {subTab === 'ideas' && <IdeasTab user={user} selectedYear={selectedYear} setSelectedYear={setSelectedYear} onOpenForm={() => setShowIdeaForm(true)} />}
-        {subTab === 'meetings' && <MeetingsTab user={user} onOpenForm={() => setShowMeetingForm(true)} />}
+        {subTab === 'meetings' && (
+          <MeetingsTab
+            user={user}
+            communityId={communityId}
+            fiscalYearId={fiscalYearId}
+            onOpenForm={() => setShowMeetingForm(true)}
+            onOpenMinutesForm={(meetingId) => {
+              setSelectedMeetingId(meetingId);
+              setShowMinutesForm(true);
+            }}
+          />
+        )}
         {subTab === 'plan' && <PlanInputTab user={user} onOpenForm={() => setShowPlanForm(true)} />}
       </div>
     </div>
@@ -305,8 +338,46 @@ function IdeasTab({ user, selectedYear, setSelectedYear, onOpenForm }: { user: D
   );
 }
 
-function MeetingsTab({ user, onOpenForm }: { user: DemoUser; onOpenForm: () => void }) {
+function MeetingsTab({
+  user,
+  communityId,
+  fiscalYearId,
+  onOpenForm,
+  onOpenMinutesForm,
+}: {
+  user: DemoUser;
+  communityId: string;
+  fiscalYearId: string;
+  onOpenForm: () => void;
+  onOpenMinutesForm: (meetingId: string) => void;
+}) {
   const { t } = useLanguage();
+  const [meetings, setMeetings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadMeetings();
+  }, [communityId, fiscalYearId]);
+
+  const loadMeetings = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('meetings')
+        .select('*')
+        .eq('community_id', communityId)
+        .eq('fiscal_year_id', fiscalYearId)
+        .order('scheduled_date', { ascending: false });
+
+      if (error) throw error;
+      setMeetings(data || []);
+    } catch (error) {
+      console.error('Error loading meetings:', error);
+      setMeetings([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -319,29 +390,24 @@ function MeetingsTab({ user, onOpenForm }: { user: DemoUser; onOpenForm: () => v
         </button>
       )}
 
-      <MeetingCard
-        date="2025年11月20日"
-        title={t('planning_meeting')}
-        chair={t('village_head')}
-        participants={45}
-        status={t('scheduled')}
-      />
-      <MeetingCard
-        date="2025年10月15日"
-        title={t('budget_approval_meeting')}
-        chair={t('cmb_leader')}
-        participants={38}
-        status={t('completed')}
-        hasMinutes
-      />
-      <MeetingCard
-        date="2025年9月10日"
-        title={t('quarterly_review')}
-        chair={t('forest_officer')}
-        participants={42}
-        status={t('completed')}
-        hasMinutes
-      />
+      {loading ? (
+        <div className="bg-white rounded-xl p-4 border border-gray-200 animate-pulse">
+          <div className="h-24 bg-gray-200 rounded"></div>
+        </div>
+      ) : meetings.length === 0 ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+          <p className="text-sm text-amber-900">{t('no_meetings')}</p>
+        </div>
+      ) : (
+        meetings.map((meeting) => (
+          <MeetingCard
+            key={meeting.id}
+            meeting={meeting}
+            user={user}
+            onRegisterMinutes={() => onOpenMinutesForm(meeting.id)}
+          />
+        ))
+      )}
     </>
   );
 }
@@ -404,32 +470,83 @@ function IdeaCard({ title, status, color, by }: { title: string; status: string;
   );
 }
 
-function MeetingCard({ date, title, chair, participants, status, hasMinutes }: {
-  date: string;
-  title: string;
-  chair: string;
-  participants: number;
-  status: string;
-  hasMinutes?: boolean;
+function MeetingCard({
+  meeting,
+  user,
+  onRegisterMinutes,
+}: {
+  meeting: any;
+  user: DemoUser;
+  onRegisterMinutes: () => void;
 }) {
   const { t } = useLanguage();
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'scheduled':
+        return 'bg-blue-100 text-blue-700';
+      case 'completed':
+        return 'bg-emerald-100 text-emerald-700';
+      case 'cancelled':
+        return 'bg-red-100 text-red-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'scheduled':
+        return t('scheduled');
+      case 'completed':
+        return t('completed');
+      case 'cancelled':
+        return t('cancelled');
+      default:
+        return status;
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
-          <p className="text-sm font-bold text-gray-900">{title}</p>
-          <p className="text-xs text-gray-600 mt-1">{date}</p>
+          <p className="text-sm font-bold text-gray-900">{meeting.title}</p>
+          <p className="text-xs text-gray-600 mt-1">
+            {formatDate(meeting.scheduled_date)}
+            {meeting.scheduled_time && ` ${meeting.scheduled_time}`}
+          </p>
         </div>
-        {status === t('scheduled') && (
-          <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-lg font-semibold whitespace-nowrap">{status}</span>
-        )}
+        <span
+          className={`${getStatusColor(meeting.status)} text-xs px-2 py-1 rounded-lg font-semibold whitespace-nowrap ml-2`}
+        >
+          {getStatusText(meeting.status)}
+        </span>
       </div>
-      <p className="text-xs text-gray-600">{t('chair')}: {chair}</p>
-      <p className="text-xs text-gray-500 mt-1">{t('participants')}: {participants}名</p>
-      {hasMinutes && (
-        <button className="mt-3 w-full bg-blue-100 text-blue-600 rounded-lg py-2 text-xs font-semibold hover:bg-blue-200 transition-colors">
-          {t('view_minutes')}
+      {meeting.chairperson && (
+        <p className="text-xs text-gray-600">
+          {t('chair')}: {meeting.chairperson}
+        </p>
+      )}
+      {meeting.location && (
+        <p className="text-xs text-gray-500 mt-1">
+          {t('location')}: {meeting.location}
+        </p>
+      )}
+      {meeting.agenda && (
+        <p className="text-xs text-gray-500 mt-1">{meeting.agenda}</p>
+      )}
+      {meeting.status === 'scheduled' && user.role === 'CMB' && (
+        <button
+          onClick={onRegisterMinutes}
+          className="mt-3 w-full bg-emerald-600 text-white rounded-lg py-2 text-xs font-semibold hover:bg-emerald-700 transition-colors"
+        >
+          {t('register_minutes')}
         </button>
       )}
     </div>
