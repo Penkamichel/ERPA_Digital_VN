@@ -36,12 +36,11 @@ export function useFiscalYearData(communityName: string, selectedYear: number) {
         throw new Error('Fiscal year not found');
       }
 
-      const { data: fundReg } = await supabase
+      const { data: fundRegs } = await supabase
         .from('fund_registrations')
-        .select('approved_amount')
+        .select('amount_received_vnd')
         .eq('community_id', community.id)
-        .eq('fiscal_year_id', fy.id)
-        .maybeSingle();
+        .eq('fiscal_year_id', fy.id);
 
       const { data: activities } = await supabase
         .from('plan_activities')
@@ -56,7 +55,7 @@ export function useFiscalYearData(communityName: string, selectedYear: number) {
         .eq('fiscal_year_id', fy.id)
         .maybeSingle();
 
-      const totalBudget = Number(fundReg?.approved_amount || 0);
+      const totalBudget = fundRegs?.reduce((sum, reg) => sum + Number(reg.amount_received_vnd || 0), 0) || 0;
       const activityCount = activities?.length || 0;
       const completedCount = activities?.filter(a => a.status === 'completed').length || 0;
       const ongoingCount = activities?.filter(a => a.status === 'ongoing').length || 0;
