@@ -9,11 +9,14 @@ import {
   useFiscalYearData
 } from '../components/mobile';
 
+const DEMO_COMMUNITY_ID = '550e8400-e29b-41d4-a716-446655440000';
+const DEMO_FISCAL_YEAR_ID_2025 = '550e8400-e29b-41d4-a716-446655440001';
+
 const DEMO_USERS: DemoUser[] = [
-  { id: '1', name: 'Siriporn (CMB)', role: 'CMB', communityId: '', communityName: 'Ban Pho Village' },
-  { id: '2', name: 'Somchai (Member)', role: 'Community Member', communityId: '', communityName: 'Ban Pho Village' },
-  { id: '3', name: 'Thawatchai (FO)', role: 'Forest Owner', communityId: '', communityName: 'Ban Pho Village' },
-  { id: '4', name: 'Anan (CPC)', role: 'CPC', communityId: '', communityName: 'Ban Pho Village' },
+  { id: '1', name: 'Siriporn (CMB)', role: 'CMB', communityId: DEMO_COMMUNITY_ID, communityName: 'Ban Pho Village' },
+  { id: '2', name: 'Somchai (Member)', role: 'Community Member', communityId: DEMO_COMMUNITY_ID, communityName: 'Ban Pho Village' },
+  { id: '3', name: 'Thawatchai (FO)', role: 'Forest Owner', communityId: DEMO_COMMUNITY_ID, communityName: 'Ban Pho Village' },
+  { id: '4', name: 'Anan (CPC)', role: 'CPC', communityId: DEMO_COMMUNITY_ID, communityName: 'Ban Pho Village' },
 ];
 
 export default function MobileAppDemo() {
@@ -103,6 +106,8 @@ export default function MobileAppDemo() {
                   selectedYear={selectedYear}
                   setSelectedYear={setSelectedYear}
                   initialSubTab={subTab}
+                  communityId={DEMO_COMMUNITY_ID}
+                  fiscalYearId={DEMO_FISCAL_YEAR_ID_2025}
                 />
               )}
               {activeTab === 'activity' && (
@@ -112,6 +117,8 @@ export default function MobileAppDemo() {
                   setSelectedYear={setSelectedYear}
                   fiscalYearData={fiscalYearData}
                   initialSubTab={subTab}
+                  communityId={DEMO_COMMUNITY_ID}
+                  fiscalYearId={DEMO_FISCAL_YEAR_ID_2025}
                 />
               )}
               {activeTab === 'settings' && (

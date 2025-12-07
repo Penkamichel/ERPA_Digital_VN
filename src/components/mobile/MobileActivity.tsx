@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { DemoUser, ActivitySubTab, FiscalYearData } from './types';
 import { ActivityDetail } from './ActivityDetail';
+import { ReceiptActivityLogForm } from './forms/ReceiptActivityLogForm';
 import { supabase } from '../../lib/supabase';
 
 interface MobileActivityProps {
@@ -9,6 +10,8 @@ interface MobileActivityProps {
   setSelectedYear: (year: number) => void;
   fiscalYearData: FiscalYearData | null;
   initialSubTab?: string;
+  communityId: string;
+  fiscalYearId: string;
 }
 
 interface Activity {
@@ -20,9 +23,10 @@ interface Activity {
   period_end: string;
 }
 
-export function MobileActivity({ user, selectedYear, setSelectedYear, fiscalYearData, initialSubTab }: MobileActivityProps) {
+export function MobileActivity({ user, selectedYear, setSelectedYear, fiscalYearData, initialSubTab, communityId, fiscalYearId }: MobileActivityProps) {
   const [subTab, setSubTab] = useState<ActivitySubTab>(initialSubTab as ActivitySubTab || 'activities');
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
+  const [showReceiptForm, setShowReceiptForm] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -80,6 +84,20 @@ export function MobileActivity({ user, selectedYear, setSelectedYear, fiscalYear
   const usagePercent = fiscalYearData
     ? Math.round((fiscalYearData.totalSpent / fiscalYearData.totalBudget) * 100)
     : 0;
+
+  if (showReceiptForm) {
+    return (
+      <ReceiptActivityLogForm
+        communityId={communityId}
+        fiscalYearId={fiscalYearId}
+        onBack={() => setShowReceiptForm(false)}
+        onSuccess={() => {
+          setShowReceiptForm(false);
+          loadActivities();
+        }}
+      />
+    );
+  }
 
   if (selectedActivityId) {
     return (
@@ -149,7 +167,7 @@ export function MobileActivity({ user, selectedYear, setSelectedYear, fiscalYear
             onActivityClick={setSelectedActivityId}
           />
         )}
-        {subTab === 'reporting' && <ReportingTab user={user} selectedYear={selectedYear} />}
+        {subTab === 'reporting' && <ReportingTab user={user} selectedYear={selectedYear} onOpenForm={() => setShowReceiptForm(true)} />}
       </div>
     </div>
   );
@@ -216,7 +234,7 @@ function ActivitiesTab({ activities, loading, onActivityClick }: {
   );
 }
 
-function ReportingTab({ user, selectedYear }: { user: DemoUser; selectedYear: number }) {
+function ReportingTab({ user, selectedYear, onOpenForm }: { user: DemoUser; selectedYear: number; onOpenForm: () => void }) {
   const isCompleted = selectedYear < 2025;
 
   if (user.role !== 'CMB') {
@@ -231,12 +249,18 @@ function ReportingTab({ user, selectedYear }: { user: DemoUser; selectedYear: nu
     <>
       {!isCompleted && (
         <>
-          <button className="w-full bg-blue-600 text-white rounded-xl py-4 font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+          <button
+            onClick={onOpenForm}
+            className="w-full bg-blue-600 text-white rounded-xl py-4 font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+          >
             <span className="text-xl">📝</span>
             活動記録を入力
           </button>
 
-          <button className="w-full bg-emerald-600 text-white rounded-xl py-4 font-semibold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2">
+          <button
+            onClick={onOpenForm}
+            className="w-full bg-emerald-600 text-white rounded-xl py-4 font-semibold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
+          >
             <span className="text-xl">📸</span>
             写真・レシートをアップロード
           </button>

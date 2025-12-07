@@ -1,16 +1,82 @@
 import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { DemoUser, PlanSubTab } from './types';
+import { FundRegistrationForm } from './forms/FundRegistrationForm';
+import { IdeaRegistrationForm } from './forms/IdeaRegistrationForm';
+import { MeetingMinutesForm } from './forms/MeetingMinutesForm';
+import { PlanBudgetForm } from './forms/PlanBudgetForm';
 
 interface MobilePlanProps {
   user: DemoUser;
   selectedYear: number;
   setSelectedYear: (year: number) => void;
   initialSubTab?: string;
+  communityId: string;
+  fiscalYearId: string;
 }
 
-export function MobilePlan({ user, selectedYear, setSelectedYear, initialSubTab }: MobilePlanProps) {
+export function MobilePlan({ user, selectedYear, setSelectedYear, initialSubTab, communityId, fiscalYearId }: MobilePlanProps) {
   const [subTab, setSubTab] = useState<PlanSubTab>(initialSubTab as PlanSubTab || 'fund');
+  const [showFundForm, setShowFundForm] = useState(false);
+  const [showIdeaForm, setShowIdeaForm] = useState(false);
+  const [showMeetingForm, setShowMeetingForm] = useState(false);
+  const [showPlanForm, setShowPlanForm] = useState(false);
+
+  if (showFundForm) {
+    return (
+      <FundRegistrationForm
+        communityId={communityId}
+        fiscalYearId={fiscalYearId}
+        onBack={() => setShowFundForm(false)}
+        onSuccess={() => {
+          setShowFundForm(false);
+          window.location.reload();
+        }}
+      />
+    );
+  }
+
+  if (showIdeaForm) {
+    return (
+      <IdeaRegistrationForm
+        communityId={communityId}
+        fiscalYearId={fiscalYearId}
+        onBack={() => setShowIdeaForm(false)}
+        onSuccess={() => {
+          setShowIdeaForm(false);
+          window.location.reload();
+        }}
+      />
+    );
+  }
+
+  if (showMeetingForm) {
+    return (
+      <MeetingMinutesForm
+        communityId={communityId}
+        fiscalYearId={fiscalYearId}
+        onBack={() => setShowMeetingForm(false)}
+        onSuccess={() => {
+          setShowMeetingForm(false);
+          window.location.reload();
+        }}
+      />
+    );
+  }
+
+  if (showPlanForm) {
+    return (
+      <PlanBudgetForm
+        communityId={communityId}
+        fiscalYearId={fiscalYearId}
+        onBack={() => setShowPlanForm(false)}
+        onSuccess={() => {
+          setShowPlanForm(false);
+          window.location.reload();
+        }}
+      />
+    );
+  }
 
   return (
     <div>
@@ -47,16 +113,16 @@ export function MobilePlan({ user, selectedYear, setSelectedYear, initialSubTab 
       </div>
 
       <div className="p-4 space-y-3">
-        {subTab === 'fund' && <FundRegistrationTab user={user} selectedYear={selectedYear} />}
-        {subTab === 'ideas' && <IdeasTab user={user} selectedYear={selectedYear} setSelectedYear={setSelectedYear} />}
-        {subTab === 'meetings' && <MeetingsTab user={user} />}
-        {subTab === 'plan' && <PlanInputTab user={user} />}
+        {subTab === 'fund' && <FundRegistrationTab user={user} selectedYear={selectedYear} onOpenForm={() => setShowFundForm(true)} />}
+        {subTab === 'ideas' && <IdeasTab user={user} selectedYear={selectedYear} setSelectedYear={setSelectedYear} onOpenForm={() => setShowIdeaForm(true)} />}
+        {subTab === 'meetings' && <MeetingsTab user={user} onOpenForm={() => setShowMeetingForm(true)} />}
+        {subTab === 'plan' && <PlanInputTab user={user} onOpenForm={() => setShowPlanForm(true)} />}
       </div>
     </div>
   );
 }
 
-function FundRegistrationTab({ user, selectedYear }: { user: DemoUser; selectedYear: number }) {
+function FundRegistrationTab({ user, selectedYear, onOpenForm }: { user: DemoUser; selectedYear: number; onOpenForm: () => void }) {
   return (
     <>
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
@@ -67,7 +133,10 @@ function FundRegistrationTab({ user, selectedYear }: { user: DemoUser; selectedY
       </div>
 
       {user.role === 'CMB' && selectedYear === 2025 && (
-        <button className="w-full bg-blue-600 text-white rounded-xl py-3 font-semibold hover:bg-blue-700 transition-colors">
+        <button
+          onClick={onOpenForm}
+          className="w-full bg-blue-600 text-white rounded-xl py-3 font-semibold hover:bg-blue-700 transition-colors"
+        >
           Fund登録情報を編集
         </button>
       )}
@@ -104,7 +173,7 @@ function FundRegistrationTab({ user, selectedYear }: { user: DemoUser; selectedY
   );
 }
 
-function IdeasTab({ user, selectedYear, setSelectedYear }: { user: DemoUser; selectedYear: number; setSelectedYear: (y: number) => void }) {
+function IdeasTab({ user, selectedYear, setSelectedYear, onOpenForm }: { user: DemoUser; selectedYear: number; setSelectedYear: (y: number) => void; onOpenForm: () => void }) {
   return (
     <>
       <div className="flex items-center gap-2">
@@ -121,7 +190,10 @@ function IdeasTab({ user, selectedYear, setSelectedYear }: { user: DemoUser; sel
       </div>
 
       {user.role === 'Community Member' && selectedYear === 2025 && (
-        <button className="w-full bg-blue-600 text-white rounded-xl py-3 font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+        <button
+          onClick={onOpenForm}
+          className="w-full bg-blue-600 text-white rounded-xl py-3 font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+        >
           <span className="text-xl">💡</span>
           新しいアイデアを提出
         </button>
@@ -153,11 +225,14 @@ function IdeasTab({ user, selectedYear, setSelectedYear }: { user: DemoUser; sel
   );
 }
 
-function MeetingsTab({ user }: { user: DemoUser }) {
+function MeetingsTab({ user, onOpenForm }: { user: DemoUser; onOpenForm: () => void }) {
   return (
     <>
       {user.role === 'CMB' && (
-        <button className="w-full bg-blue-600 text-white rounded-xl py-3 font-semibold hover:bg-blue-700 transition-colors">
+        <button
+          onClick={onOpenForm}
+          className="w-full bg-blue-600 text-white rounded-xl py-3 font-semibold hover:bg-blue-700 transition-colors"
+        >
           新しい会議を設定
         </button>
       )}
@@ -189,7 +264,7 @@ function MeetingsTab({ user }: { user: DemoUser }) {
   );
 }
 
-function PlanInputTab({ user }: { user: DemoUser }) {
+function PlanInputTab({ user, onOpenForm }: { user: DemoUser; onOpenForm: () => void }) {
   if (user.role !== 'CMB') {
     return (
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
@@ -207,7 +282,10 @@ function PlanInputTab({ user }: { user: DemoUser }) {
         </p>
       </div>
 
-      <button className="w-full bg-emerald-600 text-white rounded-xl py-3 font-semibold hover:bg-emerald-700 transition-colors">
+      <button
+        onClick={onOpenForm}
+        className="w-full bg-emerald-600 text-white rounded-xl py-3 font-semibold hover:bg-emerald-700 transition-colors"
+      >
         新しい活動計画を作成
       </button>
 
