@@ -9,8 +9,8 @@ import {
   useFiscalYearData
 } from '../components/mobile';
 
-const DEMO_COMMUNITY_ID = '550e8400-e29b-41d4-a716-446655440000';
-const DEMO_FISCAL_YEAR_ID_2025 = '550e8400-e29b-41d4-a716-446655440001';
+const DEMO_COMMUNITY_ID = 'a0000001-0000-0000-0000-000000000000';
+const DEMO_FISCAL_YEAR_ID_2025 = 'ffffffff-ffff-ffff-ffff-ffffffffffff';
 
 const DEMO_USERS: DemoUser[] = [
   { id: '1', name: 'Siriporn (CMB)', role: 'CMB', communityId: DEMO_COMMUNITY_ID, communityName: 'Ban Pho Village' },

@@ -189,7 +189,7 @@ function IdeasTab({ user, selectedYear, setSelectedYear, onOpenForm }: { user: D
         </select>
       </div>
 
-      {user.role === 'Community Member' && selectedYear === 2025 && (
+      {(user.role === 'Community Member' || user.role === 'CMB') && selectedYear === 2025 && (
         <button
           onClick={onOpenForm}
           className="w-full bg-blue-600 text-white rounded-xl py-3 font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
