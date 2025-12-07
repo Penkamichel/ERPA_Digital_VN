@@ -100,14 +100,14 @@ export function MobileHome({
         </div>
       ) : (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
-          <p className="text-sm text-amber-900">データを読み込めませんでした</p>
+          <p className="text-sm text-amber-900">{t('data_load_error')}</p>
         </div>
       )}
 
       {selectedYear === 2025 && fiscalYearData && !fiscalYearData.workflowStatus.finalReportSubmitted && (
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
-          <h2 className="font-bold text-gray-900 mb-1">📌 次にやること</h2>
-          <p className="text-xs text-gray-600 mb-3">これを完了させましょう</p>
+          <h2 className="font-bold text-gray-900 mb-1">📌 {t('next_actions')}</h2>
+          <p className="text-xs text-gray-600 mb-3">{t('complete_these')}</p>
 
           <div className="space-y-2">
             {nextActions.map((action, idx) => (
@@ -142,11 +142,11 @@ export function MobileHome({
       {fiscalYearData && (
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-            <p className="text-xs text-gray-600 mb-1">現在実施中の活動</p>
+            <p className="text-xs text-gray-600 mb-1">{t('ongoing_activities')}</p>
             <p className="text-2xl font-bold text-blue-600">{fiscalYearData.ongoingCount}</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-            <p className="text-xs text-gray-600 mb-1">終わった活動</p>
+            <p className="text-xs text-gray-600 mb-1">{t('completed_activities')}</p>
             <p className="text-2xl font-bold text-emerald-600">{fiscalYearData.completedCount}</p>
           </div>
         </div>
@@ -158,17 +158,17 @@ export function MobileHome({
           onClick={() => setShowInfo(false)}
         >
           <div className="bg-white rounded-2xl p-6 m-4 max-w-sm" onClick={e => e.stopPropagation()}>
-            <h3 className="font-bold text-gray-900 mb-3">💡 予算について</h3>
+            <h3 className="font-bold text-gray-900 mb-3">💡 {t('budget_info_title')}</h3>
             <div className="space-y-2 text-sm text-gray-700">
-              <p><strong>今年使えるお金：</strong><br />森を守る活動のために、今年使える全部のお金です。</p>
-              <p><strong>今まで使った分：</strong><br />活動を始めてから、今までに使ったお金の合計です。</p>
-              <p><strong>使った割合：</strong><br />全体のお金のうち、どれくらい使ったかをパーセントで表しています。</p>
+              <p><strong>{t('budget_info_total')}：</strong><br />{t('budget_info_total_desc')}</p>
+              <p><strong>{t('budget_info_used')}：</strong><br />{t('budget_info_used_desc')}</p>
+              <p><strong>{t('budget_info_percent')}：</strong><br />{t('budget_info_percent_desc')}</p>
             </div>
             <button
               onClick={() => setShowInfo(false)}
               className="w-full mt-4 bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
             >
-              わかりました
+              {t('understood')}
             </button>
           </div>
         </div>

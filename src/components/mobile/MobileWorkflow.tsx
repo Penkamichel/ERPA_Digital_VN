@@ -1,11 +1,14 @@
 import { Check, Circle, AlertCircle, ChevronRight } from 'lucide-react';
 import { WorkflowStep, FiscalYearData, NavigationProps } from './types';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface MobileWorkflowProps extends NavigationProps {
   fiscalYearData: FiscalYearData | null;
 }
 
 export function MobileWorkflow({ fiscalYearData, setActiveTab, setSubTab }: MobileWorkflowProps) {
+  const { t } = useLanguage();
+
   if (!fiscalYearData) {
     return (
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
@@ -28,51 +31,51 @@ export function MobileWorkflow({ fiscalYearData, setActiveTab, setSubTab }: Mobi
   const workflowSteps: WorkflowStep[] = [
     {
       id: 1,
-      name: 'Fund登録',
-      description: '承認された予算を登録',
+      name: t('fund_registration_step'),
+      description: t('fund_registration_desc'),
       status: getStepStatus(ws.fundRegistrationCompleted, true),
-      action: 'Fund登録ページへ',
+      action: t('go_to_fund_page'),
       navigateTo: { tab: 'plan', subTab: 'fund' }
     },
     {
       id: 2,
-      name: '会議を設定',
-      description: '今年の活動を決める話し合い',
+      name: t('schedule_meeting_step'),
+      description: t('schedule_meeting_desc'),
       status: getStepStatus(ws.meetingScheduledCompleted, ws.fundRegistrationCompleted),
-      action: '会議設定ページへ',
+      action: t('go_to_meeting_page'),
       navigateTo: { tab: 'plan', subTab: 'meetings' }
     },
     {
       id: 3,
-      name: '議事録を登録',
-      description: '会議の記録を保存',
+      name: t('register_minutes_step'),
+      description: t('register_minutes_desc'),
       status: getStepStatus(ws.minutesUploadedCompleted, ws.meetingScheduledCompleted),
-      action: '議事録登録ページへ',
+      action: t('go_to_minutes_page'),
       navigateTo: { tab: 'plan', subTab: 'meetings' }
     },
     {
       id: 4,
-      name: '活動計画を作成',
-      description: '何をするか詳しく決める',
+      name: t('create_plan_step'),
+      description: t('create_plan_desc'),
       status: getStepStatus(ws.planCreatedCompleted, ws.minutesUploadedCompleted),
-      action: '計画作成ページへ',
+      action: t('go_to_plan_page'),
       navigateTo: { tab: 'plan', subTab: 'plan' }
     },
     {
       id: 5,
-      name: '活動を実施',
-      description: '決めたことを実行して記録',
+      name: t('implement_activities_step'),
+      description: t('implement_activities_desc'),
       status: ws.activitiesOngoing || ws.finalReportSubmitted ? 'completed' :
               getStepStatus(false, ws.planCreatedCompleted),
-      action: '活動記録ページへ',
+      action: t('go_to_activity_page'),
       navigateTo: { tab: 'activity', subTab: 'activities' }
     },
     {
       id: 6,
-      name: '最終報告を作成',
-      description: '1年間の活動をまとめる',
+      name: t('create_final_report_step'),
+      description: t('create_final_report_desc'),
       status: getStepStatus(ws.finalReportSubmitted, ws.activitiesOngoing),
-      action: ws.finalReportSubmitted ? '報告書を見る' : '報告書作成ページへ',
+      action: ws.finalReportSubmitted ? t('view_report') : t('go_to_report_page'),
       navigateTo: { tab: 'activity', subTab: 'reporting' }
     },
   ];
@@ -88,7 +91,7 @@ export function MobileWorkflow({ fiscalYearData, setActiveTab, setSubTab }: Mobi
 
   return (
     <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
-      <h2 className="font-bold text-gray-900 mb-3">🗓️ 今年の作業の流れ</h2>
+      <h2 className="font-bold text-gray-900 mb-3">🗓️ {t('workflow_title')}</h2>
 
       <div className="space-y-3">
         {workflowSteps.map((step, idx) => (
