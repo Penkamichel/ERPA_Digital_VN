@@ -152,6 +152,7 @@ const translations: Record<Language, Record<string, string>> = {
     'go_to_activity_page': 'Go to Activity Records',
     'go_to_report_page': 'Go to Report Creation',
     'view_report': 'View Report',
+    'urgent': 'Urgent',
   },
   ja: {
     'home': 'ホーム',
@@ -294,6 +295,7 @@ const translations: Record<Language, Record<string, string>> = {
     'go_to_activity_page': '活動記録ページへ',
     'go_to_report_page': '報告書作成ページへ',
     'view_report': '報告書を見る',
+    'urgent': '急ぎ',
   },
   vi: {
     'home': 'Trang chủ',
@@ -436,6 +438,7 @@ const translations: Record<Language, Record<string, string>> = {
     'go_to_activity_page': 'Đến trang ghi nhận hoạt động',
     'go_to_report_page': 'Đến trang tạo báo cáo',
     'view_report': 'Xem báo cáo',
+    'urgent': 'Khẩn cấp',
   },
 };
 

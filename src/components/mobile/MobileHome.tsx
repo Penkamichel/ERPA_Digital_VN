@@ -24,10 +24,66 @@ export function MobileHome({
   const { t } = useLanguage();
   const [showInfo, setShowInfo] = useState(false);
 
-  const nextActions = [
-    { icon: '📝', title: '森林パトロールの予算詳細を入力', subtitle: '備品や人件費の内訳を記入', urgent: true },
-    { icon: '📸', title: 'NTFP採取活動の写真をアップロード', subtitle: '活動の証拠を残す', urgent: false },
-  ];
+  const getNextActions = () => {
+    if (!fiscalYearData) return [];
+
+    const ws = fiscalYearData.workflowStatus;
+    const actions = [];
+
+    if (!ws.fundRegistrationCompleted) {
+      actions.push({
+        icon: '💰',
+        title: t('fund_registration_step'),
+        subtitle: t('fund_registration_desc'),
+        urgent: true,
+        navigateTo: { tab: 'plan' as const, subTab: 'fund' as const }
+      });
+    } else if (!ws.meetingScheduledCompleted) {
+      actions.push({
+        icon: '📅',
+        title: t('schedule_meeting_step'),
+        subtitle: t('schedule_meeting_desc'),
+        urgent: true,
+        navigateTo: { tab: 'plan' as const, subTab: 'meetings' as const }
+      });
+    } else if (!ws.minutesUploadedCompleted) {
+      actions.push({
+        icon: '📝',
+        title: t('register_minutes_step'),
+        subtitle: t('register_minutes_desc'),
+        urgent: true,
+        navigateTo: { tab: 'plan' as const, subTab: 'meetings' as const }
+      });
+    } else if (!ws.planCreatedCompleted) {
+      actions.push({
+        icon: '📋',
+        title: t('create_plan_step'),
+        subtitle: t('create_plan_desc'),
+        urgent: true,
+        navigateTo: { tab: 'plan' as const, subTab: 'plan' as const }
+      });
+    } else if (!ws.activitiesOngoing && !ws.finalReportSubmitted) {
+      actions.push({
+        icon: '🌳',
+        title: t('implement_activities_step'),
+        subtitle: t('implement_activities_desc'),
+        urgent: true,
+        navigateTo: { tab: 'activity' as const, subTab: 'activities' as const }
+      });
+    } else if (ws.activitiesOngoing && !ws.finalReportSubmitted) {
+      actions.push({
+        icon: '📊',
+        title: t('create_final_report_step'),
+        subtitle: t('create_final_report_desc'),
+        urgent: false,
+        navigateTo: { tab: 'activity' as const, subTab: 'reporting' as const }
+      });
+    }
+
+    return actions;
+  };
+
+  const nextActions = getNextActions();
 
   const formatAmount = (amount: number) => {
     if (amount >= 1000000) {
@@ -104,7 +160,7 @@ export function MobileHome({
         </div>
       )}
 
-      {selectedYear === 2025 && fiscalYearData && !fiscalYearData.workflowStatus.finalReportSubmitted && (
+      {selectedYear === 2025 && fiscalYearData && !fiscalYearData.workflowStatus.finalReportSubmitted && nextActions.length > 0 && (
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
           <h2 className="font-bold text-gray-900 mb-1">📌 {t('next_actions')}</h2>
           <p className="text-xs text-gray-600 mb-3">{t('complete_these')}</p>
@@ -113,6 +169,12 @@ export function MobileHome({
             {nextActions.map((action, idx) => (
               <button
                 key={idx}
+                onClick={() => {
+                  setActiveTab(action.navigateTo.tab);
+                  if (setSubTab) {
+                    setSubTab(action.navigateTo.subTab);
+                  }
+                }}
                 className="w-full bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-3 text-left hover:shadow-md transition-all"
               >
                 <div className="flex items-start gap-3">
@@ -121,7 +183,7 @@ export function MobileHome({
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-semibold text-gray-900">{action.title}</p>
                       {action.urgent && (
-                        <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">急ぎ</span>
+                        <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">{t('urgent')}</span>
                       )}
                     </div>
                     <p className="text-xs text-gray-600 mt-1">{action.subtitle}</p>
