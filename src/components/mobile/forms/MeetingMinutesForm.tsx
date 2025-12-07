@@ -21,6 +21,7 @@ export function MeetingMinutesForm({ communityId, fiscalYearId, meetingId, onBac
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [loadingMeeting, setLoadingMeeting] = useState(!!meetingId);
+  const [ideas, setIdeas] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     chairperson: '',
@@ -35,10 +36,26 @@ export function MeetingMinutesForm({ communityId, fiscalYearId, meetingId, onBac
   });
 
   useEffect(() => {
+    loadIdeas();
     if (meetingId) {
       loadMeetingData();
     }
-  }, [meetingId]);
+  }, [meetingId, fiscalYearId]);
+
+  const loadIdeas = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('idea_registrations')
+        .select('*')
+        .eq('fiscal_year_id', fiscalYearId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setIdeas(data || []);
+    } catch (error) {
+      console.error('Error loading ideas:', error);
+    }
+  };
 
   const loadMeetingData = async () => {
     if (!meetingId) return;
@@ -68,9 +85,18 @@ export function MeetingMinutesForm({ communityId, fiscalYearId, meetingId, onBac
     }
   };
 
-  const [votingResults, setVotingResults] = useState<VotingResult[]>([
-    { content_item: '', agree_count: 0, total_attendees: 0 },
-  ]);
+  const [votingResults, setVotingResults] = useState<VotingResult[]>([]);
+
+  useEffect(() => {
+    if (ideas.length > 0 && votingResults.length === 0) {
+      const initialResults = ideas.map(idea => ({
+        content_item: idea.idea_title,
+        agree_count: 0,
+        total_attendees: 0,
+      }));
+      setVotingResults(initialResults);
+    }
+  }, [ideas]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,7 +160,19 @@ export function MeetingMinutesForm({ communityId, fiscalYearId, meetingId, onBac
   };
 
   const addVotingResult = () => {
-    setVotingResults([...votingResults, { content_item: '', agree_count: 0, total_attendees: 0 }]);
+    const availableIdeas = ideas.filter(idea =>
+      !votingResults.some(result => result.content_item === idea.idea_title)
+    );
+
+    if (availableIdeas.length > 0) {
+      setVotingResults([...votingResults, {
+        content_item: availableIdeas[0].idea_title,
+        agree_count: 0,
+        total_attendees: 0
+      }]);
+    } else {
+      setVotingResults([...votingResults, { content_item: '', agree_count: 0, total_attendees: 0 }]);
+    }
   };
 
   const removeVotingResult = (index: number) => {
@@ -308,13 +346,22 @@ export function MeetingMinutesForm({ communityId, fiscalYearId, meetingId, onBac
             {votingResults.map((result, index) => (
               <div key={index} className="bg-gray-50 rounded-lg p-3 space-y-2">
                 <div className="flex items-start justify-between gap-2">
-                  <input
-                    type="text"
+                  <select
                     value={result.content_item}
                     onChange={(e) => updateVotingResult(index, 'content_item', e.target.value)}
-                    placeholder={t('voting_item')}
                     className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
-                  />
+                  >
+                    <option value="">{t('voting_item')}</option>
+                    {ideas.map((idea) => (
+                      <option
+                        key={idea.id}
+                        value={idea.idea_title}
+                        disabled={votingResults.some((r, i) => i !== index && r.content_item === idea.idea_title)}
+                      >
+                        {idea.idea_title}
+                      </option>
+                    ))}
+                  </select>
                   {votingResults.length > 1 && (
                     <button
                       type="button"

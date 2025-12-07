@@ -159,6 +159,8 @@ export function MobilePlan({ user, selectedYear, setSelectedYear, initialSubTab,
             user={user}
             communityId={communityId}
             fiscalYearId={fiscalYearId}
+            selectedYear={selectedYear}
+            setSelectedYear={setSelectedYear}
             onOpenForm={() => setShowMeetingForm(true)}
             onOpenMinutesForm={(meetingId) => {
               setSelectedMeetingId(meetingId);
@@ -360,6 +362,8 @@ function MeetingsTab({
   user,
   communityId,
   fiscalYearId,
+  selectedYear,
+  setSelectedYear,
   onOpenForm,
   onOpenMinutesForm,
   onViewMinutes,
@@ -367,6 +371,8 @@ function MeetingsTab({
   user: DemoUser;
   communityId: string;
   fiscalYearId: string;
+  selectedYear: number;
+  setSelectedYear: (year: number) => void;
   onOpenForm: () => void;
   onOpenMinutesForm: (meetingId: string) => void;
   onViewMinutes: (meetingId: string) => void;
@@ -374,19 +380,48 @@ function MeetingsTab({
   const { t } = useLanguage();
   const [meetings, setMeetings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fiscalYears, setFiscalYears] = useState<any[]>([]);
 
   useEffect(() => {
-    loadMeetings();
-  }, [communityId, fiscalYearId]);
+    loadFiscalYears();
+  }, [communityId]);
+
+  useEffect(() => {
+    if (fiscalYears.length > 0) {
+      loadMeetings();
+    }
+  }, [selectedYear, fiscalYears]);
+
+  const loadFiscalYears = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('fiscal_years')
+        .select('*')
+        .eq('community_id', communityId)
+        .order('year', { ascending: false });
+
+      if (error) throw error;
+      setFiscalYears(data || []);
+    } catch (error) {
+      console.error('Error loading fiscal years:', error);
+    }
+  };
 
   const loadMeetings = async () => {
     setLoading(true);
     try {
+      const currentFiscalYear = fiscalYears.find(fy => fy.year === selectedYear);
+      if (!currentFiscalYear) {
+        setMeetings([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('meetings')
         .select('*')
         .eq('community_id', communityId)
-        .eq('fiscal_year_id', fiscalYearId)
+        .eq('fiscal_year_id', currentFiscalYear.id)
         .order('scheduled_date', { ascending: false });
 
       if (error) throw error;
@@ -399,14 +434,32 @@ function MeetingsTab({
     }
   };
 
+  const availableYears = fiscalYears.map(fy => fy.year);
+  const currentYear = new Date().getFullYear();
+
   return (
     <>
-      {user.role === 'CMB' && (
+      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 mb-3">
+        <label className="block text-xs font-semibold text-gray-700 mb-2">{t('fiscal_year')}</label>
+        <select
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+        >
+          {availableYears.map(year => (
+            <option key={year} value={year}>
+              {year} {year === currentYear && `(${t('this_year')})`}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {user.role === 'CMB' && selectedYear === currentYear && (
         <button
           onClick={onOpenForm}
-          className="w-full bg-blue-600 text-white rounded-xl py-3 font-semibold hover:bg-blue-700 transition-colors"
+          className="w-full bg-blue-600 text-white rounded-xl py-3 font-semibold hover:bg-blue-700 transition-colors mb-3"
         >
-          {t('new_meeting')}
+          + {t('new_meeting')}
         </button>
       )}
 
@@ -424,6 +477,8 @@ function MeetingsTab({
             key={meeting.id}
             meeting={meeting}
             user={user}
+            currentYear={currentYear}
+            selectedYear={selectedYear}
             onRegisterMinutes={() => onOpenMinutesForm(meeting.id)}
             onViewMinutes={() => onViewMinutes(meeting.id)}
           />
@@ -494,11 +549,15 @@ function IdeaCard({ title, status, color, by }: { title: string; status: string;
 function MeetingCard({
   meeting,
   user,
+  currentYear,
+  selectedYear,
   onRegisterMinutes,
   onViewMinutes,
 }: {
   meeting: any;
   user: DemoUser;
+  currentYear: number;
+  selectedYear: number;
   onRegisterMinutes: () => void;
   onViewMinutes: () => void;
 }) {
@@ -564,7 +623,7 @@ function MeetingCard({
       {meeting.agenda && (
         <p className="text-xs text-gray-500 mt-1">{meeting.agenda}</p>
       )}
-      {meeting.status === 'scheduled' && user.role === 'CMB' && (
+      {meeting.status === 'scheduled' && user.role === 'CMB' && selectedYear === currentYear && (
         <button
           onClick={onRegisterMinutes}
           className="mt-3 w-full bg-emerald-600 text-white rounded-lg py-2 text-xs font-semibold hover:bg-emerald-700 transition-colors"
