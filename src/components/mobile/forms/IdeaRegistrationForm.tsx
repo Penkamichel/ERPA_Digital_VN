@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft, Save, Lightbulb } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, Save, Lightbulb, DollarSign } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 
 interface IdeaRegistrationFormProps {
@@ -11,6 +11,8 @@ interface IdeaRegistrationFormProps {
 
 export function IdeaRegistrationForm({ communityId, fiscalYearId, onBack, onSuccess }: IdeaRegistrationFormProps) {
   const [loading, setLoading] = useState(false);
+  const [totalAvailableFunds, setTotalAvailableFunds] = useState<number>(0);
+  const [loadingFunds, setLoadingFunds] = useState(true);
   const [formData, setFormData] = useState({
     title: '',
     category: 'Agriculture & Forestry Extension',
@@ -36,6 +38,30 @@ export function IdeaRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
     'Propaganda / Training',
     'Other (Aligned with Article 6.3)',
   ];
+
+  useEffect(() => {
+    loadAvailableFunds();
+  }, [communityId, fiscalYearId]);
+
+  const loadAvailableFunds = async () => {
+    try {
+      setLoadingFunds(true);
+      const { data, error } = await supabase
+        .from('fund_registrations')
+        .select('amount_received_vnd')
+        .eq('community_id', communityId)
+        .eq('fiscal_year_id', fiscalYearId);
+
+      if (error) throw error;
+
+      const total = data?.reduce((sum, record) => sum + (Number(record.amount_received_vnd) || 0), 0) || 0;
+      setTotalAvailableFunds(total);
+    } catch (error) {
+      console.error('Error loading available funds:', error);
+    } finally {
+      setLoadingFunds(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,6 +132,36 @@ export function IdeaRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
       </div>
 
       <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-4 shadow-sm border-2 border-emerald-300">
+          <h2 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+            <DollarSign className="w-5 h-5 text-emerald-600" />
+            利用可能な資金総額
+          </h2>
+
+          {loadingFunds ? (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+              読み込み中...
+            </div>
+          ) : (
+            <>
+              <div className="text-3xl font-bold text-emerald-700 mb-1">
+                {totalAvailableFunds.toLocaleString()} VND
+              </div>
+              <p className="text-xs text-gray-700">
+                Fund登録で受領した資金の合計額です。この範囲内で活動計画を立ててください。
+              </p>
+              {totalAvailableFunds === 0 && (
+                <div className="mt-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <p className="text-xs text-amber-800 font-semibold">
+                    ⚠️ まだ資金が登録されていません。先にFund登録を完了してください。
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
           <h2 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
             <Lightbulb className="w-5 h-5 text-amber-600" />

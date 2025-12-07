@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 
@@ -7,11 +7,6 @@ interface FundRegistrationFormProps {
   fiscalYearId: string;
   onBack: () => void;
   onSuccess: () => void;
-}
-
-interface Activity {
-  id: string;
-  activity_name: string;
 }
 
 const FUND_SOURCES = [
@@ -37,7 +32,6 @@ const DONATION_TYPES = ['Cash', 'Material (in-kind)', 'Labor'];
 
 export function FundRegistrationForm({ communityId, fiscalYearId, onBack, onSuccess }: FundRegistrationFormProps) {
   const [loading, setLoading] = useState(false);
-  const [activities, setActivities] = useState<Activity[]>([]);
   const [formData, setFormData] = useState({
     fund_source: 'Forest Owner (ERPA)',
     fund_purpose: 'Forest protection contract',
@@ -45,31 +39,12 @@ export function FundRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
     payment_date: new Date().toISOString().split('T')[0],
     payment_reference_number: '',
     payer_name: '',
-    related_activity_id: '',
     donation_type: 'Cash',
     carry_over_reference_year: '',
     notes: '',
     recorded_by: '',
     recorded_date: new Date().toISOString().split('T')[0],
   });
-
-  useEffect(() => {
-    loadActivities();
-  }, []);
-
-  const loadActivities = async () => {
-    try {
-      const { data } = await supabase
-        .from('plan_activities')
-        .select('id, activity_name')
-        .eq('community_id', communityId)
-        .eq('fiscal_year_id', fiscalYearId);
-
-      setActivities(data || []);
-    } catch (error) {
-      console.error('Error loading activities:', error);
-    }
-  };
 
   const isErpaFund = () => {
     return ['Forest Owner (ERPA)', 'Provincial Fund (ERPA)', 'CPC (ERPA-related)'].includes(formData.fund_source);
@@ -85,11 +60,6 @@ export function FundRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (isErpaFund() && !formData.related_activity_id) {
-      alert('ERPA資金の場合、関連活動の選択が必要です');
-      return;
-    }
 
     if (isCommunityDonation() && !formData.donation_type) {
       alert('コミュニティ寄付の場合、寄付タイプの選択が必要です');
@@ -115,7 +85,6 @@ export function FundRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
           payment_date: formData.payment_date,
           payment_reference_number: formData.payment_reference_number || null,
           payer_name: formData.payer_name,
-          related_activity_id: formData.related_activity_id || null,
           donation_type: isCommunityDonation() ? formData.donation_type : null,
           carry_over_reference_year: isCarryOver() ? parseInt(formData.carry_over_reference_year) : null,
           notes: formData.notes,
@@ -257,46 +226,6 @@ export function FundRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
             </div>
           </div>
         </div>
-
-        {isErpaFund() && (
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-blue-200">
-            <h2 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-              <span>🔗</span>
-              ERPA関連情報
-            </h2>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">関連活動 *</label>
-                {activities.length > 0 ? (
-                  <select
-                    required={isErpaFund()}
-                    value={formData.related_activity_id}
-                    onChange={(e) => handleChange('related_activity_id', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  >
-                    <option value="">選択してください</option>
-                    {activities.map(activity => (
-                      <option key={activity.id} value={activity.id}>
-                        {activity.activity_name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-xs text-gray-600 bg-gray-50 rounded-lg p-3">
-                    まだ活動が登録されていません。先に活動計画を作成してください。
-                  </div>
-                )}
-              </div>
-
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                <p className="text-xs text-amber-800">
-                  💡 実際のアプリでは、ここで支援書類（契約書、承認レターなど）をアップロードできます
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {isCommunityDonation() && (
           <div className="bg-white rounded-xl p-4 shadow-sm border border-emerald-200">
