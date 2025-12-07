@@ -397,7 +397,6 @@ function MeetingsTab({
       const { data, error } = await supabase
         .from('fiscal_years')
         .select('*')
-        .eq('community_id', communityId)
         .order('year', { ascending: false });
 
       if (error) throw error;
