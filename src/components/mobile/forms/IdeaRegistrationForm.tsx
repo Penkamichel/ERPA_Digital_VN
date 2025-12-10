@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Save, Lightbulb, DollarSign } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 interface IdeaRegistrationFormProps {
   communityId: string;
@@ -10,6 +11,7 @@ interface IdeaRegistrationFormProps {
 }
 
 export function IdeaRegistrationForm({ communityId, fiscalYearId, onBack, onSuccess }: IdeaRegistrationFormProps) {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [totalAvailableFunds, setTotalAvailableFunds] = useState<number>(0);
   const [loadingFunds, setLoadingFunds] = useState(true);
@@ -68,7 +70,7 @@ export function IdeaRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
 
     const { article_6_3, not_overlapping, within_limit } = formData.alignment;
     if (!article_6_3 || !not_overlapping || !within_limit) {
-      alert('全ての法令適合チェックが必要です');
+      alert(t('all_compliance_checks_required'));
       return;
     }
 
@@ -99,11 +101,11 @@ export function IdeaRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
 
       if (error) throw error;
 
-      alert('✅ アイデアが登録されました！');
+      alert('✅ ' + t('idea_registered_success'));
       onSuccess();
     } catch (error) {
       console.error('Error submitting idea:', error);
-      alert('登録エラーが発生しました');
+      alert(t('registration_error'));
     } finally {
       setLoading(false);
     }
@@ -125,23 +127,23 @@ export function IdeaRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
       <div className="bg-gradient-to-br from-amber-600 to-amber-700 text-white p-4 sticky top-0 z-10">
         <button onClick={onBack} className="flex items-center gap-2 mb-2 hover:bg-white/10 rounded-lg px-2 py-1 -ml-2">
           <ArrowLeft className="w-5 h-5" />
-          <span className="text-sm">戻る</span>
+          <span className="text-sm">{t('back')}</span>
         </button>
-        <h1 className="text-lg font-bold">アイデア登録フォーム</h1>
-        <p className="text-xs opacity-90 mt-1">活動提案（Plan/Budget作成前）</p>
+        <h1 className="text-lg font-bold">{t('idea_registration_form')}</h1>
+        <p className="text-xs opacity-90 mt-1">{t('activity_proposal')}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="p-4 space-y-4">
         <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-4 shadow-sm border-2 border-emerald-300">
           <h2 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-emerald-600" />
-            利用可能な資金総額
+            {t('available_funds_total')}
           </h2>
 
           {loadingFunds ? (
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-              読み込み中...
+              {t('loading')}
             </div>
           ) : (
             <>
@@ -149,12 +151,12 @@ export function IdeaRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
                 {totalAvailableFunds.toLocaleString()} VND
               </div>
               <p className="text-xs text-gray-700">
-                Fund登録で受領した資金の合計額です。この範囲内で活動計画を立ててください。
+                {t('fund_registration_total_info')}
               </p>
               {totalAvailableFunds === 0 && (
                 <div className="mt-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
                   <p className="text-xs text-amber-800 font-semibold">
-                    ⚠️ まだ資金が登録されていません。先にFund登録を完了してください。
+                    ⚠️ {t('no_funds_registered')}
                   </p>
                 </div>
               )}
@@ -165,24 +167,24 @@ export function IdeaRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
           <h2 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
             <Lightbulb className="w-5 h-5 text-amber-600" />
-            基本情報
+            {t('basic_info')}
           </h2>
 
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">アイデアタイトル *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('idea_title')} *</label>
               <input
                 type="text"
                 required
                 value={formData.title}
                 onChange={(e) => handleChange('title', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                placeholder="例: 養蜂技術の向上"
+                placeholder=""
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">カテゴリー *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('category')} *</label>
               <select
                 required
                 value={formData.category}
@@ -196,37 +198,37 @@ export function IdeaRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">問題・課題 *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('problem_statement')} *</label>
               <textarea
                 required
                 value={formData.problem_statement}
                 onChange={(e) => handleChange('problem_statement', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 rows={3}
-                placeholder="現在直面している問題や課題を記入してください"
+                placeholder=""
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">解決策・詳細説明 *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('solution_description')} *</label>
               <textarea
                 required
                 value={formData.description}
                 onChange={(e) => handleChange('description', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 rows={4}
-                placeholder="提案する解決策や活動内容を詳しく記入してください"
+                placeholder=""
               />
             </div>
           </div>
         </div>
 
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-          <h2 className="font-bold text-gray-900 mb-3">📍 実施情報</h2>
+          <h2 className="font-bold text-gray-900 mb-3">📍 {t('implementation_info')}</h2>
 
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">実施予定場所 *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('expected_location')} *</label>
               <input
                 type="text"
                 required
@@ -237,48 +239,48 @@ export function IdeaRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">受益者</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('beneficiaries')}</label>
               <textarea
                 value={formData.expected_beneficiaries}
                 onChange={(e) => handleChange('expected_beneficiaries', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 rows={2}
-                placeholder="誰がこの活動から恩恵を受けるか"
+                placeholder=""
               />
             </div>
           </div>
         </div>
 
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-          <h2 className="font-bold text-gray-900 mb-3">💰 予算見積</h2>
+          <h2 className="font-bold text-gray-900 mb-3">💰 {t('budget_estimate')}</h2>
 
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">総予算見積（VND）</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('total_budget_estimate')}</label>
               <input
                 type="number"
                 value={formData.estimated_budget_total}
                 onChange={(e) => handleChange('estimated_budget_total', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                placeholder="例: 15000000"
+                placeholder=""
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">コミュニティ拠出</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('community_contribution')}</label>
               <textarea
                 value={formData.estimated_community_contribution}
                 onChange={(e) => handleChange('estimated_community_contribution', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 rows={2}
-                placeholder="労働力、資材などコミュニティからの拠出内容"
+                placeholder=""
               />
             </div>
           </div>
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <h2 className="font-bold text-blue-900 mb-3">✓ 法令適合チェック</h2>
+          <h2 className="font-bold text-blue-900 mb-3">✓ {t('compliance_check')}</h2>
 
           <div className="space-y-2">
             <label className="flex items-start gap-3 cursor-pointer">
@@ -290,7 +292,7 @@ export function IdeaRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
                 required
               />
               <span className="text-sm text-blue-900 flex-1">
-                Article 6.3 livelihood developmentに適合
+                {t('article_6_3_compliance')}
               </span>
             </label>
 
@@ -303,7 +305,7 @@ export function IdeaRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
                 required
               />
               <span className="text-sm text-blue-900 flex-1">
-                他の国家予算支援と重複していない（Annex I I.2.d）
+                {t('no_overlap_compliance')}
               </span>
             </label>
 
@@ -316,18 +318,18 @@ export function IdeaRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
                 required
               />
               <span className="text-sm text-blue-900 flex-1">
-                5000万VND/年以内の制限を守っている
+                {t('within_limit_compliance')}
               </span>
             </label>
           </div>
         </div>
 
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-          <h2 className="font-bold text-gray-900 mb-3">📝 提出情報</h2>
+          <h2 className="font-bold text-gray-900 mb-3">📝 {t('submission_info')}</h2>
 
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">提出者 *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('submitter')} *</label>
               <input
                 type="text"
                 required
@@ -338,7 +340,7 @@ export function IdeaRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">提出日 *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('submission_date')} *</label>
               <input
                 type="date"
                 required
@@ -356,7 +358,7 @@ export function IdeaRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
             onClick={onBack}
             className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold"
           >
-            キャンセル
+            {t('cancel')}
           </button>
           <button
             type="submit"
@@ -366,12 +368,12 @@ export function IdeaRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
             {loading ? (
               <>
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                登録中...
+                {t('submitting')}
               </>
             ) : (
               <>
                 <Save className="w-5 h-5" />
-                アイデアを登録
+                {t('register')}
               </>
             )}
           </button>

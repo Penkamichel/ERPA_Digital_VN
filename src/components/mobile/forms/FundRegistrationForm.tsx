@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 interface FundRegistrationFormProps {
   communityId: string;
@@ -31,6 +32,7 @@ const FUND_PURPOSES = [
 const DONATION_TYPES = ['Cash', 'Material (in-kind)', 'Labor'];
 
 export function FundRegistrationForm({ communityId, fiscalYearId, onBack, onSuccess }: FundRegistrationFormProps) {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     fund_source: 'Forest Owner (ERPA)',
@@ -62,12 +64,12 @@ export function FundRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
     e.preventDefault();
 
     if (isCommunityDonation() && !formData.donation_type) {
-      alert('コミュニティ寄付の場合、寄付タイプの選択が必要です');
+      alert(t('donation_type_required'));
       return;
     }
 
     if (isCarryOver() && !formData.carry_over_reference_year) {
-      alert('繰越金の場合、参照年度が必要です');
+      alert(t('carryover_year_required'));
       return;
     }
 
@@ -101,11 +103,11 @@ export function FundRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
         .eq('community_id', communityId)
         .eq('fiscal_year_id', fiscalYearId);
 
-      alert('✅ Fund登録が完了しました！');
+      alert('✅ ' + t('fund_register_success'));
       onSuccess();
     } catch (error) {
       console.error('Error submitting fund registration:', error);
-      alert('登録エラーが発生しました');
+      alert(t('registration_error'));
     } finally {
       setLoading(false);
     }
@@ -120,22 +122,22 @@ export function FundRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
       <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-4 sticky top-0 z-10">
         <button onClick={onBack} className="flex items-center gap-2 mb-2 hover:bg-white/10 rounded-lg px-2 py-1 -ml-2">
           <ArrowLeft className="w-5 h-5" />
-          <span className="text-sm">戻る</span>
+          <span className="text-sm">{t('back')}</span>
         </button>
-        <h1 className="text-lg font-bold">Fund登録フォーム</h1>
-        <p className="text-xs opacity-90 mt-1">資金の受領を登録</p>
+        <h1 className="text-lg font-bold">{t('fund_registration_form')}</h1>
+        <p className="text-xs opacity-90 mt-1">{t('register_fund_receipt')}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="p-4 space-y-4">
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
           <h2 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
             <span>💰</span>
-            資金情報
+            {t('fund_info')}
           </h2>
 
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">資金源 *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('fund_source')} *</label>
               <select
                 required
                 value={formData.fund_source}
@@ -149,7 +151,7 @@ export function FundRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">資金目的 *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('fund_purpose')} *</label>
               <select
                 required
                 value={formData.fund_purpose}
@@ -165,13 +167,13 @@ export function FundRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
             {isErpaFund() && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <p className="text-xs text-blue-800 font-semibold">
-                  🔵 ERPA資金として登録されます
+                  🔵 {t('erpa_fund_notice')}
                 </p>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">受領金額 (VND) *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('amount_received')} *</label>
               <input
                 type="number"
                 required
@@ -187,12 +189,12 @@ export function FundRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
           <h2 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
             <span>📄</span>
-            支払い情報
+            {t('payment_info')}
           </h2>
 
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">支払日 *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('payment_date')} *</label>
               <input
                 type="date"
                 required
@@ -203,19 +205,19 @@ export function FundRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">支払者名 *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('payer_name')} *</label>
               <input
                 type="text"
                 required
                 value={formData.payer_name}
                 onChange={(e) => handleChange('payer_name', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                placeholder="例: Provincial Forest Protection Fund"
+                placeholder="e.g., Provincial Forest Protection Fund"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">参照番号</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('payment_reference_number')}</label>
               <input
                 type="text"
                 value={formData.payment_reference_number}
@@ -231,11 +233,11 @@ export function FundRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
           <div className="bg-white rounded-xl p-4 shadow-sm border border-emerald-200">
             <h2 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
               <span>🎁</span>
-              寄付情報
+              {t('donation_info')}
             </h2>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">寄付タイプ *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('donation_type')} *</label>
               <select
                 required={isCommunityDonation()}
                 value={formData.donation_type}
@@ -254,11 +256,11 @@ export function FundRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
           <div className="bg-white rounded-xl p-4 shadow-sm border border-purple-200">
             <h2 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
               <span>🔄</span>
-              繰越情報
+              {t('carryover_info')}
             </h2>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">繰越元年度 *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('carryover_reference_year')} *</label>
               <input
                 type="number"
                 required={isCarryOver()}
@@ -276,35 +278,35 @@ export function FundRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
           <h2 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
             <span>📝</span>
-            記録情報
+            {t('recording_info')}
           </h2>
 
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">備考</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('notes')}</label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => handleChange('notes', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 rows={3}
-                placeholder="追加情報があれば記入してください"
+                placeholder=""
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">記録者 *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('recorder')} *</label>
               <input
                 type="text"
                 required
                 value={formData.recorded_by}
                 onChange={(e) => handleChange('recorded_by', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                placeholder="例: Siriporn"
+                placeholder="e.g., Siriporn"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">記録日 *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('record_date')} *</label>
               <input
                 type="date"
                 required
@@ -322,7 +324,7 @@ export function FundRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
             onClick={onBack}
             className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold"
           >
-            キャンセル
+            {t('cancel')}
           </button>
           <button
             type="submit"
@@ -332,12 +334,12 @@ export function FundRegistrationForm({ communityId, fiscalYearId, onBack, onSucc
             {loading ? (
               <>
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                登録中...
+                {t('submitting')}
               </>
             ) : (
               <>
                 <Save className="w-5 h-5" />
-                登録する
+                {t('register')}
               </>
             )}
           </button>

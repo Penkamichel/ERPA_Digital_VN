@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowLeft, Save, FileText, Plus, X } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 interface PlanBudgetFormProps {
   communityId: string;
@@ -17,6 +18,7 @@ interface BudgetItem {
 }
 
 export function PlanBudgetForm({ communityId, fiscalYearId, onBack, onSuccess }: PlanBudgetFormProps) {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     activity_name: '',
@@ -101,11 +103,11 @@ export function PlanBudgetForm({ communityId, fiscalYearId, onBack, onSuccess }:
         .eq('community_id', communityId)
         .eq('fiscal_year_id', fiscalYearId);
 
-      alert('✅ Plan & Budgetが登録されました！');
+      alert('✅ ' + t('plan_budget_registered_success'));
       onSuccess();
     } catch (error) {
       console.error('Error submitting plan & budget:', error);
-      alert('登録エラーが発生しました');
+      alert(t('registration_error'));
     } finally {
       setLoading(false);
     }
@@ -134,9 +136,9 @@ export function PlanBudgetForm({ communityId, fiscalYearId, onBack, onSuccess }:
       <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 text-white p-4 sticky top-0 z-10">
         <button onClick={onBack} className="flex items-center gap-2 mb-2 hover:bg-white/10 rounded-lg px-2 py-1 -ml-2">
           <ArrowLeft className="w-5 h-5" />
-          <span className="text-sm">戻る</span>
+          <span className="text-sm">{t('back')}</span>
         </button>
-        <h1 className="text-lg font-bold">Plan & Budget登録フォーム</h1>
+        <h1 className="text-lg font-bold">{t('plan_budget_form')}</h1>
         <p className="text-xs opacity-90 mt-1">Template 03 - Activity Plan and Budget</p>
       </div>
 
@@ -144,24 +146,24 @@ export function PlanBudgetForm({ communityId, fiscalYearId, onBack, onSuccess }:
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
           <h2 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
             <FileText className="w-5 h-5 text-emerald-600" />
-            活動情報
+            {t('activity_info')}
           </h2>
 
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">活動名 *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('activity_name')} *</label>
               <input
                 type="text"
                 required
                 value={formData.activity_name}
                 onChange={(e) => handleChange('activity_name', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                placeholder="例: 養蜂トレーニング"
+                placeholder=""
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">カテゴリー *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('category')} *</label>
               <select
                 required
                 value={formData.activity_category}
@@ -176,7 +178,7 @@ export function PlanBudgetForm({ communityId, fiscalYearId, onBack, onSuccess }:
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">開始日 *</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">{t('start_date')} *</label>
                 <input
                   type="date"
                   required
@@ -187,7 +189,7 @@ export function PlanBudgetForm({ communityId, fiscalYearId, onBack, onSuccess }:
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">終了日 *</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">{t('end_date')} *</label>
                 <input
                   type="date"
                   required
@@ -199,7 +201,7 @@ export function PlanBudgetForm({ communityId, fiscalYearId, onBack, onSuccess }:
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">実施方式 *</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('implementation_method')} *</label>
               <select
                 required
                 value={formData.implementation_method}
@@ -213,7 +215,7 @@ export function PlanBudgetForm({ communityId, fiscalYearId, onBack, onSuccess }:
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">備考</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('notes')}</label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => handleChange('notes', e.target.value)}
@@ -225,11 +227,11 @@ export function PlanBudgetForm({ communityId, fiscalYearId, onBack, onSuccess }:
         </div>
 
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-          <h2 className="font-bold text-gray-900 mb-3">💰 資金源</h2>
+          <h2 className="font-bold text-gray-900 mb-3">💰 {t('fund_sources')}</h2>
 
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">森林所有者からの支援 (VND)</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('forest_owner_support')}</label>
               <input
                 type="number"
                 value={formData.forest_owner_support}
@@ -239,7 +241,7 @@ export function PlanBudgetForm({ communityId, fiscalYearId, onBack, onSuccess }:
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">コミュニティ拠出 (VND)</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('community_contribution')}</label>
               <input
                 type="number"
                 value={formData.community_contribution}
@@ -249,7 +251,7 @@ export function PlanBudgetForm({ communityId, fiscalYearId, onBack, onSuccess }:
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">その他の資金 (VND)</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">{t('other_funds')}</label>
               <input
                 type="number"
                 value={formData.other_funds}
@@ -262,14 +264,14 @@ export function PlanBudgetForm({ communityId, fiscalYearId, onBack, onSuccess }:
 
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-gray-900">📋 予算内訳</h2>
+            <h2 className="font-bold text-gray-900">📋 {t('budget_breakdown')}</h2>
             <button
               type="button"
               onClick={addBudgetItem}
               className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1"
             >
               <Plus className="w-4 h-4" />
-              項目追加
+              {t('add_item')}
             </button>
           </div>
 
@@ -281,7 +283,7 @@ export function PlanBudgetForm({ communityId, fiscalYearId, onBack, onSuccess }:
                     type="text"
                     value={item.item_name}
                     onChange={(e) => updateBudgetItem(index, 'item_name', e.target.value)}
-                    placeholder="項目名"
+                    placeholder={t('item_name')}
                     className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
                   />
                   {budgetItems.length > 1 && (
@@ -299,26 +301,26 @@ export function PlanBudgetForm({ communityId, fiscalYearId, onBack, onSuccess }:
                     type="text"
                     value={item.unit}
                     onChange={(e) => updateBudgetItem(index, 'unit', e.target.value)}
-                    placeholder="単位"
+                    placeholder={t('unit')}
                     className="px-2 py-1 border border-gray-300 rounded text-sm"
                   />
                   <input
                     type="number"
                     value={item.quantity || ''}
                     onChange={(e) => updateBudgetItem(index, 'quantity', parseFloat(e.target.value) || 0)}
-                    placeholder="数量"
+                    placeholder={t('quantity')}
                     className="px-2 py-1 border border-gray-300 rounded text-sm"
                   />
                   <input
                     type="number"
                     value={item.unit_cost || ''}
                     onChange={(e) => updateBudgetItem(index, 'unit_cost', parseFloat(e.target.value) || 0)}
-                    placeholder="単価"
+                    placeholder={t('unit_price')}
                     className="px-2 py-1 border border-gray-300 rounded text-sm"
                   />
                 </div>
                 <div className="text-right">
-                  <span className="text-xs text-gray-600">小計: </span>
+                  <span className="text-xs text-gray-600">{t('subtotal')}: </span>
                   <span className="text-sm font-bold text-emerald-600">
                     {(item.quantity * item.unit_cost).toLocaleString()} VND
                   </span>
@@ -329,7 +331,7 @@ export function PlanBudgetForm({ communityId, fiscalYearId, onBack, onSuccess }:
 
           <div className="mt-4 pt-4 border-t border-gray-200">
             <div className="flex justify-between items-center">
-              <span className="font-bold text-gray-900">総予算:</span>
+              <span className="font-bold text-gray-900">{t('total')}:</span>
               <span className="text-xl font-bold text-emerald-600">
                 {calculateTotal().toLocaleString()} VND
               </span>
@@ -343,7 +345,7 @@ export function PlanBudgetForm({ communityId, fiscalYearId, onBack, onSuccess }:
             onClick={onBack}
             className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold"
           >
-            キャンセル
+            {t('cancel')}
           </button>
           <button
             type="submit"
@@ -353,12 +355,12 @@ export function PlanBudgetForm({ communityId, fiscalYearId, onBack, onSuccess }:
             {loading ? (
               <>
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                登録中...
+                {t('submitting')}
               </>
             ) : (
               <>
                 <Save className="w-5 h-5" />
-                Plan & Budgetを登録
+                {t('register')}
               </>
             )}
           </button>
